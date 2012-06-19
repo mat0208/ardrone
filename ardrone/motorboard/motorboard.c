@@ -41,6 +41,17 @@ PWM   A
 #include "../gpio/gpio.h"
 #include "motorboard.h"
 
+
+#define MOTOR_UART "/dev/ttyO0"
+#define GPIO_M1 78
+#define GPIO_M2 79
+#define GPIO_M3 80
+#define GPIO_M4 81
+
+#define GPIO_ERROR_READ 175
+#define GPIO_ERROR_RESET 176
+
+
 int mot_fd; /* File descriptor for the port */
 
 
@@ -51,10 +62,10 @@ int motorboard_cmd(u08 cmd, u08 *reply, int replylen) {
 
 int motorboard_Init() {
 	//open mot port
-	mot_fd = open("/dev/ttyPA1", O_RDWR | O_NOCTTY | O_NDELAY);
+	mot_fd = open(MOTOR_UART, O_RDWR | O_NOCTTY | O_NDELAY);
 	if (mot_fd == -1)
 	{
-		perror("open_port: Unable to open /dev/ttyPA1 - ");
+		perror("open_port: Unable to open "MOTOR_UART" - ");
 		return 201;
 	} 
 	fcntl(mot_fd, F_SETFL, 0); //read calls are non blocking
@@ -175,22 +186,22 @@ FF1 Delay 2 seconds after sending FFs
 	//Set the new options for the port
 	tcsetattr(mot_fd, TCSANOW, &options);
 	
-	//reset IRQ flipflop - on error 106 read 1, this code resets 106 to 0
-	gpio_set(106,-1);
-	gpio_set(107,0);
-	gpio_set(107,1);
+	//reset IRQ flipflop - on error GPIO_ERROR_READ read 1, this code resets GPIO_ERROR_READ to 0
+	gpio_set(GPIO_ERROR_READ,-1);
+	gpio_set(GPIO_ERROR_RESET,0);
+	gpio_set(GPIO_ERROR_RESET,1);
 
 	//all select lines inactive
-	gpio_set(68,1);
-	gpio_set(69,1);
-	gpio_set(70,1);
-	gpio_set(71,1);
+	gpio_set(GPIO_M1,1);
+	gpio_set(GPIO_M2,1);
+	gpio_set(GPIO_M3,1);
+	gpio_set(GPIO_M4,1);
 
 	//configure motors
 	int retval=0;
 	u08 reply[256];
 	for(int m=0;m<4;m++) {
-		gpio_set(68+m,-1);
+		gpio_set(GPIO_M1+m,-1);
 		motorboard_cmd(0xe0,reply,2);
 		if(reply[0]!=0xe0 || reply[1]!=0x00)
 		{
@@ -198,14 +209,14 @@ FF1 Delay 2 seconds after sending FFs
 			retval=1;
 		}
 		motorboard_cmd(m+1,reply,1);
-		gpio_set(68+m,1);
+		gpio_set(GPIO_M1+m,1);
 	}
 
 	//all select lines active
-	gpio_set(68,-1);
-	gpio_set(69,-1);
-	gpio_set(70,-1);
-	gpio_set(71,-1);
+	gpio_set(GPIO_M1,-1);
+	gpio_set(GPIO_M2,-1);
+	gpio_set(GPIO_M3,-1);
+	gpio_set(GPIO_M4,-1);
 
 	//start multicast
 	motorboard_cmd(0xa0,reply,1);
@@ -214,10 +225,10 @@ FF1 Delay 2 seconds after sending FFs
 	motorboard_cmd(0xa0,reply,1);
 	motorboard_cmd(0xa0,reply,1);
 
-	//reset IRQ flipflop - on error 106 read 1, this code resets 106 to 0
-	gpio_set(106,-1);
-	gpio_set(107,0);
-	gpio_set(107,1);
+	//reset IRQ flipflop - on error GPIO_ERROR_READ read 1, this code resets GPIO_ERROR_READ to 0
+	gpio_set(GPIO_ERROR_READ,-1);
+	gpio_set(GPIO_ERROR_RESET,0);
+	gpio_set(GPIO_ERROR_RESET,1);
 
 	//all leds green
 	motorboard_SetLeds(MOT_LEDGREEN, MOT_LEDGREEN, MOT_LEDGREEN, MOT_LEDGREEN);
