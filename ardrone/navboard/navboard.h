@@ -63,6 +63,8 @@ struct nav_struct
 	u16 us_courbe_temps;     // +0x28 Ultrasonic parameter -- counts up from 0 to approx 24346 in 192 sample cycles of which 12 cylces have value 0
 	u16 us_courbe_valeur;    // +0x2A Ultrasonic parameter -- value between 0 and 4000, no clear pattern. 192 sample cycles of which 12 cylces have value 0
 	u16 us_courbe_ref;       // +0x2C Ultrasonic parameter -- coutns down from 4000 to 0 in 192 sample cycles of which 12 cylces have value 0
+	u16 newStuff[7]; 	 //  unknown
+	
 	//end of data received from nav board  
 	double ts; //timestamp in seconds with microsecond resolution
 	float dt; //time since last sample

@@ -31,6 +31,10 @@
 #include "../gpio/gpio.h"
 #include "../util/util.h"
 
+
+#define GPIO_NAVBOARD 132
+#define READ_SIZE 60
+
 int nav_fd;
 
 float accs_offset[]                    = { 2048, 2048, 2048 };
@@ -51,18 +55,30 @@ const float gyros110_gains[]           = { 1.5517747e-03, 1.5981209e-03 };
 
 //get a sample from the nav board (non blocking)
 //returns 0 on success
+
+
+
+int safe_read(int fd, void *target, int bytesToRead)
+{
+    int bytesRead=0;
+    char * targetC=(char *)target;
+    while (bytesRead !=bytesToRead) {
+        int bytesRemaining=bytesToRead-bytesRead;
+        int n=read(fd,targetC+bytesRead,bytesRemaining);
+        if(n < 0) return n;
+        bytesRead+=n;
+    }
+    return bytesRead;
+}
+
 int nav_GetSample(nav_struct* nav)
 {
 	int n;
-	do {
-		//http://www.easysw.com/~mike/serial/serial.html
-		//When you operate the port in raw data mode, each read(2) system call will return the number 
-		//of characters that are actually available in the serial input buffers. If no characters are 
-		//available the call will return immediately due to fcntl(fd, F_SETFL, FNDELAY)
-		//The FNDELAY option causes the read function to return 0 if no characters are available on the port.
-		n = read(nav_fd, nav, 46);
-		if(n<46) return 1; //no packet received
-	} while(n - 46 > 46);  //loop until last full packet is read
+        n = safe_read(nav_fd, nav, READ_SIZE);
+        if(n<READ_SIZE) { 
+            printf("Only read %d bytes\n",n);
+            return 1; //no packet received
+        }
 	//check data is valid
 	u16 checksum	
 		=nav->seq
@@ -87,8 +103,8 @@ int nav_GetSample(nav_struct* nav)
 		+nav->us_courbe_valeur
 		+nav->us_courbe_ref; 
 	
-	if(nav->size!=44) return 2; //size incorrect
-	if(nav->checksum!=checksum) return 3; //checksum incorrect
+	if(nav->size!=READ_SIZE-2) return 2; //size incorrect
+//	if(nav->checksum!=checksum) return 3; //checksum incorrect
 	
 	//store timestamp
 	double ts_prev = nav->ts;
@@ -114,17 +130,19 @@ int nav_GetSample(nav_struct* nav)
 
 void nav_Print(nav_struct* nav) 
 {
-/*
-	printf("RAW seq=%d a=%d,%d,%d g=%d,%d,%d,%d,%d h=%d ta=%d tg=%d\n"
+
+	printf("RAW seq=%d a=%5d,%5d,%5d g=%5d,%5d,%5d,%5d,%5d h=%5d ta=%5d tg=%5d\nu=%5d,%5d,%5d,%5d,%5d,%5d,%5d\n\n"
 		,nav->seq
 		,nav->acc[0],nav->acc[1],nav->acc[2]
 		,nav->gyro[0],nav->gyro[1],nav->gyro[2],nav->gyro_110[0],nav->gyro_110[1]
 		,nav->us_echo
 		,nav->acc_temp
 		,nav->gyro_temp
+		,nav->newStuff[0],nav->newStuff[1],nav->newStuff[2],nav->newStuff[3],nav->newStuff[4],nav->newStuff[5],nav->newStuff[6]
+		
 	);
-*/	
-	printf("a=%6.3f,%6.3f,%6.3fG g=%4.0f,%4.0f,%4.0fdeg/s h=%3.0fcm ta=%4.1fC tg=%4.1fC dt=%2.0fms\n"
+	
+/*	printf("a=%6.3f,%6.3f,%6.3fG g=%4.0f,%4.0f,%4.0fdeg/s h=%3.0fcm ta=%4.1fC tg=%4.1fC dt=%2.0fms\n"
 		,nav->seq
 		,nav->ax,nav->ay,nav->az
 		,RAD2DEG(nav->gx),RAD2DEG(nav->gy),RAD2DEG(nav->gz)
@@ -132,7 +150,7 @@ void nav_Print(nav_struct* nav)
 		,nav->ta
 		,nav->tg
 		,nav->dt*1000
-	);
+	);*/
 }
 
 
@@ -229,10 +247,10 @@ int nav_Init(nav_struct* nav) {
 	//-opost -olcuc -ocrnl onlcr -onocr -onlret -ofill -ofdel nl0 cr0 tab0 bs0 vt0 ff0 -isig -icanon -iexten 
 	//-echo echoe echok -echonl -noflsh -xcase -tostop -echoprt echoctl echoke
 
-	nav_fd = open("/dev/ttyPA2", O_RDWR | O_NOCTTY | O_NDELAY);
+	nav_fd = open("/dev/ttyO1", O_RDWR | O_NOCTTY | O_NDELAY);
 	if (nav_fd == -1)
 	{
-		perror("nav_Init: Unable to open /dev/ttyPA2 - ");
+		perror("nav_Init: Unable to open /dev/ttyO1 - ");
 		return 101;
 	} 
 	fcntl(nav_fd, F_SETFL, 0); //read calls are non blocking
@@ -353,7 +371,7 @@ FF1 Delay 2 seconds after sending FFs
 	tcsetattr(nav_fd, TCSANOW, &options);
   
 	//set /MCLR pin
-	gpio_set(132,1);
+	gpio_set(GPIO_NAVBOARD,1);
 	
 	//start acquisition
 	u08 cmd=0x01;
