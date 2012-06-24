@@ -21,10 +21,20 @@
 #ifndef _VBAT_H
 #define _VBAT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct vbat_struct {
 	float vbat;
 };
 
-int vbat_init(vbat_struct *vbat);
-int vbat_read(vbat_struct *vbat);
+int vbat_init(struct vbat_struct *vbat);
+int vbat_read(struct vbat_struct *vbat);
+
+#ifdef __cplusplus
+}
+#endif
+
+
 #endif

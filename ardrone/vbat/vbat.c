@@ -109,4 +109,5 @@ int vbat_init(struct vbat_struct *vbat)
 int vbat_read(struct vbat_struct *vbat)
 {
 	vbat->vbat=vbat_get(0);
+	return 0;
 }
