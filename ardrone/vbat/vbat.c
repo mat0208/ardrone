@@ -38,27 +38,28 @@ float vbat_get(unsigned char channel)
 {
 	if(channel>9) return -1;
 
+	 if( i2c_smbus_write_byte_data( fd, 0x12, 0x20))   {
+                 fprintf( stderr, "Failed to write to I2C device (4)\n" );
+        	 return -1.0;
+         }
+                                         
+                                         
+
 	unsigned lower = i2c_smbus_read_byte_data(fd, 0x37 );
 	unsigned upper = i2c_smbus_read_byte_data(fd, 0x38 );
 	
-	printf ("U: %02X L: %02X\n",upper,lower);
+//	printf ("U: %02X L: %02X\n",upper,lower);
 	
-	unsigned value = upper<<2 | lower;
-	//VREF Reference Voltage Internally connected to VDDC pin. 1.8V +/- 0.05V
-	//Measured Input Scaling Factor External inputs ANA{0,1,2,3}  0.25  V/V  	ch 0-3
-	//Measured Input Scaling Factor VDD{0,1,2,3,4} inputs 0.4  V/V 				ch 4-8
-	//Measured Input Scaling Factor VINSYS input 0.25 V/V 						ch 9
+	unsigned value = (upper<<8 | lower) >> 6;
 	float factor=1.0;
 	
 	float v = value * factor;
-	//printf("Channel=%d Vbat=%.2fVolt RawValue=%d RawHiByte=0x%x RawLiByte=0x%x\n",(int)channel,v,value,upper,lower);
-	
 	return v;
 }
 
 
 
-int vbat_init(vbat_struct *vbat)
+int vbat_init(struct vbat_struct *vbat)
 {
 	fd = open( I2CDEV, O_RDWR );
 
@@ -105,7 +106,7 @@ int vbat_init(vbat_struct *vbat)
 	return 0;
 }
 
-int vbat_read(vbat_struct *vbat)
+int vbat_read(struct vbat_struct *vbat)
 {
 	vbat->vbat=vbat_get(0);
 }
