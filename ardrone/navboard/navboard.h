@@ -22,6 +22,10 @@
 #define _NAVBOARD_H
 #include "../util/type.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////
 // nav_struct
 ///////////////////////////////////////////////////////////////////////////////
@@ -74,17 +78,21 @@ struct nav_struct
 	float gx;   // gyro value x-axis in [rad/sec] right turn, i.e. roll right is positive           
 	float gy;   // gyro value y-axis in [rad/sec] right turn, i.e. pirch down is positive                     
 	float gz;   // gyro value z-axis in [rad/sec] right turn, i.e. yaw left is positive                           
-	float t;    // temperature in [C] 
 	float h;    // height above ground in [cm] 
-  char h_meas;// 1 if this is a new h measurement, 0 otherwise
+        char h_meas;// 1 if this is a new h measurement, 0 otherwise
 	float ta;   // temperature acc
 	float tg;   // temperature gyro  
 };
 
-int nav_Init(nav_struct* nav);
+int nav_Init(struct nav_struct* nav);
 int nav_FlatTrim();
-int nav_GetSample(nav_struct* nav);
-void nav_Print(nav_struct* nav);
+int nav_GetSample(struct nav_struct* nav);
+void nav_Print(struct nav_struct* nav);
 void nav_Close();
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif

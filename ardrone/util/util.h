@@ -21,6 +21,10 @@
 #ifndef _UTIL_H
 #define _UTIL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //degrees to radians
 #define DEG2RAD(x) ((x)*3.1415926/180)
 //radians to degrees
@@ -31,4 +35,10 @@ int util_getch(void);
 //return timestamp in seconds with microsecond resolution
 double util_timestamp();
 int util_timestamp_int();
+
+#ifdef __cplusplus
+}
+#endif
+
+
 #endif

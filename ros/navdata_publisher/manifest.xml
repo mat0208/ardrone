@@ -1,0 +1,15 @@
+<package>
+  <description brief="navdata_publisher">
+
+     navdata_publisher
+
+  </description>
+  <author>dsk7</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>none</url>
+  <depend package="roscpp"/>
+
+</package>
+
+

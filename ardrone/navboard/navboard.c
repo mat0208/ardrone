@@ -71,7 +71,7 @@ int safe_read(int fd, void *target, int bytesToRead)
     return bytesRead;
 }
 
-int nav_GetSample(nav_struct* nav)
+int nav_GetSample(struct nav_struct* nav)
 {
 	int n;
         n = safe_read(nav_fd, nav, READ_SIZE);
@@ -128,7 +128,7 @@ int nav_GetSample(nav_struct* nav)
 	return 0;
 }
 
-void nav_Print(nav_struct* nav) 
+void nav_Print(struct nav_struct* nav) 
 {
 
 	printf("RAW seq=%d a=%5d,%5d,%5d g=%5d,%5d,%5d,%5d,%5d h=%5d ta=%5d tg=%5d\nu=%5d,%5d,%5d,%5d,%5d,%5d,%5d\n\n"
@@ -170,7 +170,7 @@ int nav_FlatTrim()
 	//printf("nav_Calibrate bypassed\n");
 	//return 0;
 
-	nav_struct nav;
+	struct nav_struct nav;
 	int n_samples=40;
 	int n=0; //number of samples
 	float x1[8],x2[8]; //sum and sqr sum
@@ -219,9 +219,9 @@ int nav_FlatTrim()
 	for(i=0;i<3;i++) if(std[i]>10) return 1+i; //validate accs
 	for(i=3;i<8;i++) if(std[i]>10) return 1+i; //validate gyros
 	int tol=120;
-	if(avg[0]<2048-tol || avg[0]>2048+tol) {printf("nav_Calibrate: ax_avg out of tolerance: %d\r\n",avg[0]); return 10;}
-	if(avg[1]<2048-tol || avg[1]>2048+tol) {printf("nav_Calibrate: ay_avg out of tolerance: %d\r\n",avg[1]); return 11;}
-	if(avg[2]<3096-tol || avg[2]>3096+tol) {printf("nav_Calibrate: az_avg out of tolerance: %d\r\n",avg[2]); return 12;}
+	if(avg[0]<2048-tol || avg[0]>2048+tol) {printf("nav_Calibrate: ax_avg out of tolerance: %f\r\n",avg[0]); return 10;}
+	if(avg[1]<2048-tol || avg[1]>2048+tol) {printf("nav_Calibrate: ay_avg out of tolerance: %f\r\n",avg[1]); return 11;}
+	if(avg[2]<3096-tol || avg[2]>3096+tol) {printf("nav_Calibrate: az_avg out of tolerance: %f\r\n",avg[2]); return 12;}
 	
 	//set offsets
 	accs_offset[0]=avg[0];
@@ -240,7 +240,7 @@ int nav_FlatTrim()
 	return 0;	
 }
 
-int nav_Init(nav_struct* nav) {
+int nav_Init(struct nav_struct* nav) {
 	//open nav port
 	//stty -F /dev/ttyPA2 460800 -parenb -parodd cs8 -hupcl -cstopb cread clocal -crtscts 
 	//-ignbrk -brkint -ignpar -parmrk -inpck -istrip -inlcr -igncr -icrnl -ixon -ixoff -iuclc -ixany -imaxbel 
