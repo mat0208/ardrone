@@ -33,7 +33,7 @@
 
 
 #define GPIO_NAVBOARD 132
-#define READ_SIZE 60
+#define READ_SIZE 58
 
 int nav_fd;
 
@@ -74,11 +74,23 @@ int safe_read(int fd, void *target, int bytesToRead)
 int nav_GetSample(struct nav_struct* nav)
 {
 	int n;
-        n = safe_read(nav_fd, nav, READ_SIZE);
-        if(n<READ_SIZE) { 
-            printf("Only read %d bytes\n",n);
+	u16 size;
+        n = safe_read(nav_fd, &size, 2);
+        if(n!=2) { 
+            printf("Only read %d bytes for size info\n",n);
             return 1; //no packet received
         }
+	if(size!=READ_SIZE) {
+	    printf("nav_size is %d, but expected %d\n",size,READ_SIZE);
+	    return 2; //size incorrect
+        }
+        
+        n=safe_read(nav_fd,nav,READ_SIZE);
+        if(n!=READ_SIZE) { 
+            printf("Only read %d bytes for nav struct\n",n);
+            return 3; //no packet received
+        }
+        
 	//check data is valid
 	u16 checksum	
 		=nav->seq
@@ -103,7 +115,6 @@ int nav_GetSample(struct nav_struct* nav)
 		+nav->us_courbe_valeur
 		+nav->us_courbe_ref; 
 	
-	if(nav->size!=READ_SIZE-2) return 2; //size incorrect
 //	if(nav->checksum!=checksum) return 3; //checksum incorrect
 	
 	//store timestamp
@@ -216,9 +227,19 @@ int nav_FlatTrim()
 	}
 	
 	//validate
-	for(i=0;i<3;i++) if(std[i]>10) return 1+i; //validate accs
-	for(i=3;i<8;i++) if(std[i]>10) return 1+i; //validate gyros
-	int tol=120;
+	for(i=0;i<3;i++) {
+	    if(std[i]>10) {
+	        printf("Std deviation of accel channel %d is to large (%f)\n",i,std[i]);
+	        return 1+i; //validate accs
+            }
+        }
+	for(i=3;i<8;i++) {
+	    if(std[i]>10) {
+    	        printf("Std deviation of gyro channel %d is to large (%f)\n",i,std[i]);
+    	        return 1+i; //validate accs
+            }
+        }
+        int tol=120;
 	if(avg[0]<2048-tol || avg[0]>2048+tol) {printf("nav_Calibrate: ax_avg out of tolerance: %f\r\n",avg[0]); return 10;}
 	if(avg[1]<2048-tol || avg[1]>2048+tol) {printf("nav_Calibrate: ay_avg out of tolerance: %f\r\n",avg[1]); return 11;}
 	if(avg[2]<3096-tol || avg[2]>3096+tol) {printf("nav_Calibrate: az_avg out of tolerance: %f\r\n",avg[2]); return 12;}

@@ -6,14 +6,6 @@ float32 gyroTemperature
 float32 vrefEpson
 float32 vrefIDG
 float32 height_us
-uint16 us_echo_start
-uint16 us_echo_end
-uint16 us_association_echo
-uint16 us_distance_echo
-uint16 us_courbe_temps
-uint16 us_courbe_valeur
-uint16 us_courbe_ref
 float32[7] newFloat
-uint16[7] newUint16
 
 

@@ -1,8 +1,10 @@
 #include "ros/ros.h"
 #include "navboard.h"
 #include "navdata_publisher/Navdata.h"
+#include "navdata_publisher/RawNavdata.h"
 
 #include <sstream>
+#include <iostream>
 
 using namespace navdata_publisher;
 
@@ -22,10 +24,10 @@ int main(int argc, char **argv)
 
 
   ros::Publisher navdata_pub = n.advertise<Navdata>("navdata", 100);
-  
+  ros::Publisher rawNavdata_pub = n.advertise<RawNavdata>("rawNavdata", 100);
 
-  ros::Rate loop_rate(10.0);
-
+  // loop rate is gouverned by navboard (200 hz)
+  ros::Rate loop_rate(200.0);
 
 
   while (ros::ok())
@@ -35,39 +37,59 @@ int main(int argc, char **argv)
       printf("ERROR: nav_GetSample return code=%d\n",rc); 
     } else {
       Navdata msg;
+      RawNavdata raw;
 
       msg.navboard_seq=nav.seq;
+      raw.navboard_seq=nav.seq;
+      
       msg.acceleration[0]=nav.ax;
       msg.acceleration[1]=nav.ay;
       msg.acceleration[2]=nav.az;
       msg.gyro[0]=nav.gx;
       msg.gyro[1]=nav.gy;
       msg.gyro[2]=nav.gz;
+
+      for (int i=0;i<3;i++) { 
+        raw.acc[i]=nav.acc[i];
+        raw.gyro[i]=nav.gyro[i];
+      }
+      raw.gyro_110[0]=nav.gyro_110[0];
+      raw.gyro_110[1]=nav.gyro_110[1];
+      
       msg.accelTemperature=nav.ta;
       msg.gyroTemperature=nav.tg;
-      msg.vrefEpson=nav.vrefEpson*1.0;
-      msg.vrefIDG=nav.vrefIDG*1.0;
+      
+      raw.acc_temp=nav.acc_temp;
+      raw.gyro_temp=nav.gyro_temp;
+      
+      raw.vrefEpson=nav.vrefEpson;
+      raw.vrefIDG=nav.vrefIDG;
+      
       msg.height_us=nav.h;
-      msg.us_echo_start=nav.us_echo_start;
-      msg.us_echo_end=nav.us_echo_end;
-      msg.us_association_echo=nav.us_association_echo;
-      msg.us_distance_echo=nav.us_distance_echo;
-      msg.us_courbe_temps=nav.us_courbe_temps;
-      msg.us_courbe_valeur=nav.us_courbe_valeur;
-      msg.us_courbe_ref=nav.us_courbe_ref;
+      raw.us_echo_start=nav.us_echo_start;
+      raw.us_echo_end=nav.us_echo_end;
+      raw.us_association_echo=nav.us_association_echo;
+      raw.us_distance_echo=nav.us_distance_echo;
+      raw.us_courbe_temps=nav.us_courbe_temps;
+      raw.us_courbe_valeur=nav.us_courbe_valeur;
+      raw.us_courbe_ref=nav.us_courbe_ref;
+      
       for(int i=0;i<7;i++) {
         msg.newFloat[i]=nav.newStuff[i]*1.0;
-        msg.newUint16[i]=nav.newStuff[i];
+        raw.newUint16[i]=nav.newStuff[i];
       }
   
       navdata_pub.publish(msg);
+      rawNavdata_pub.publish(raw);
     }
-
+    
+    std::cout << ".";
+    std::cout.flush();
       ros::spinOnce();
-      loop_rate.sleep();
+//      loop_rate.sleep();
 
   }
-
+  nav_Close();
 
   return 0;
 }

@@ -49,7 +49,7 @@ Temperature Sensor: 8bit, 0.5°C/lsb, range -30 to 97.5°C
 */
 struct nav_struct
 {
-	u16 size;                // +0x00 Size of the following data (always 0x2C) 
+//	u16 size;                // +0x00 Size of the following data (always 0x2C)  // not read into struct anymore
 	u16 seq;                 // +0x02 Sequence number, increases every update 
 	u16 acc[3];              // +0x04 Raw data (10-bit) of the accelerometers multiplied by 4 
 	u16 gyro[3];             // +0x0A Raw data for the gyros, 12-bit A/D converted voltage of the gyros. X,Y=IDG, Z=Epson  

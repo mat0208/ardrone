@@ -49,7 +49,7 @@ int main()
 	//calibrate
 	printf("Calibration ...\r\n");
 	rc=nav_FlatTrim();
-	if(rc) {printf("Failed: retcode=%d\r\n",rc); return rc;}
+	if(rc) {printf("FlatTrim Failed: retcode=%d\r\n",rc); return rc;}
 	printf("Calibration OK\r\n");
 	 
 	//main loop	
