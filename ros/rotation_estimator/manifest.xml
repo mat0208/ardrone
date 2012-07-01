@@ -1,0 +1,16 @@
+<package>
+  <description brief="rotation_estimator">
+
+     rotation_estimator
+
+  </description>
+  <author>dusker</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rotation_estimator</url>
+  <depend package="rospy"/>
+  <depend package="navdata_publisher"/>
+
+</package>
+
+

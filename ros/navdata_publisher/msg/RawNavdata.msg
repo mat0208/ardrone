@@ -1,7 +1,6 @@
 uint16 navboard_seq
 uint16[3] acc
 int16[3] gyro
-int16[2] gyro_110
 uint16 acc_temp
 uint16 gyro_temp
 uint16 vrefEpson

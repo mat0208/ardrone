@@ -52,8 +52,9 @@ struct nav_struct
 //	u16 size;                // +0x00 Size of the following data (always 0x2C)  // not read into struct anymore
 	u16 seq;                 // +0x02 Sequence number, increases every update 
 	u16 acc[3];              // +0x04 Raw data (10-bit) of the accelerometers multiplied by 4 
-	u16 gyro[3];             // +0x0A Raw data for the gyros, 12-bit A/D converted voltage of the gyros. X,Y=IDG, Z=Epson  
-	u16 gyro_110[2];         // +0x10 4.5x Raw data (IDG), gyro values with another resolution (see IDG-500 datasheet)  
+	s16 gyro[3];             // +0x0A Raw data for the gyros, 16-bit gyro values
+	u16 unk1;    
+        u16 unk2;
 	u16 acc_temp;            // +0x14 Accs temperature -- startup value 120 @ 25C, rising to 143
 	u16 gyro_temp;           // +0x16 XYGyro temperature (IDG), 12-bit A/D converted voltage of IDG's temperature sensor -- startup value 1532 @ 25C, rising to 1572
 	u16 vrefEpson;           // +0x18 ZGyro v_ref (Epson), 12-bit A/D converted reference voltage of the Epson sensor  

@@ -41,10 +41,8 @@ int nav_fd;
 
 float accs_offset[]                    = { 2048, 2048, 2048 };
 const float accs_gains[]               = { 512, 512, 512 }; // 512 units <-> 1 gee
-float gyros_offset[]                   = { 1350/0.806, 1350/0.806, 1350/0.806 };
-const float gyros_gains[]              = { 6.9786031e-03, 7.1979444e-03, 3.8175473e-03 }; 
-float gyros110_offset[]                = { 1350/0.806, 1350/0.806 };
-const float gyros110_gains[]           = { 1.5517747e-03, 1.5981209e-03 };
+float gyros_offset[]                   = { 0,0,0 };
+const float gyros_gains[]              = { 2000.0/32767.0, 2000.0/32767.0, 2000.0/32767.0  }; 
 
 int safe_read(int fd, void *target, int bytesToRead)
 {
@@ -85,11 +83,11 @@ int nav_GetSample(struct nav_struct* nav)
 		+nav->acc[0]
 		+nav->acc[1]
 		+nav->acc[2]
-		+nav->gyro[0]
-		+nav->gyro[1]
-		+nav->gyro[2]
-		+nav->gyro_110[0]
-		+nav->gyro_110[1]
+		+(u16)nav->gyro[0]
+		+(u16)nav->gyro[1]
+		+(u16)nav->gyro[2]
+		+nav->unk1
+		+nav->unk2
 		+nav->acc_temp
 		+nav->gyro_temp
 		+nav->vrefEpson
@@ -119,8 +117,8 @@ int nav_GetSample(struct nav_struct* nav)
 	nav->gx = (((float)nav->gyro[0]) - gyros_offset[0]) * gyros_gains[0];
 	nav->gy = (((float)nav->gyro[1]) - gyros_offset[1]) * gyros_gains[1];
 	nav->gz = (((float)nav->gyro[2]) - gyros_offset[2]) * gyros_gains[2];	
-	if(nav->gx>DEG2RAD(-100) && nav->gx<DEG2RAD(100)) nav->gx = ((float)nav->gyro_110[0] - gyros110_offset[0]) * gyros110_gains[0];
-	if(nav->gy>DEG2RAD(-100) && nav->gy<DEG2RAD(100)) nav->gy = ((float)nav->gyro_110[1] - gyros110_offset[1]) * gyros110_gains[1];
+
+
 	nav->h  = (float)((nav->us_echo&0x7fff)) * 0.0340;
         nav->h_meas = nav->us_echo >> 15;
 	nav->tg  = (( (float)nav->gyro_temp * 0.806 /*mv/lsb*/ ) - 1250 /*Offset 1250mV at room temperature*/) / 4.0 /*Sensitivity 4mV/°C*/ + 20 /*room temperature*/;
@@ -132,10 +130,12 @@ int nav_GetSample(struct nav_struct* nav)
 void nav_Print(struct nav_struct* nav) 
 {
 
-	printf("RAW seq=%d a=%5d,%5d,%5d g=%5d,%5d,%5d,%5d,%5d h=%5d ta=%5d tg=%5d\nu=%5d,%5d,%5d,%5d,%5d,%5d,%5d\n\n"
+	printf("RAW seq=%d a=%5d,%5d,%5d g=%5d,%5d,%5d unk=%5d,%5d h=%5d ta=%5d tg=%5d\nu=%5d,%5d,%5d,%5d,%5d,%5d,%5d\n\n"
 		,nav->seq
 		,nav->acc[0],nav->acc[1],nav->acc[2]
-		,nav->gyro[0],nav->gyro[1],nav->gyro[2],nav->gyro_110[0],nav->gyro_110[1]
+		,nav->gyro[0],nav->gyro[1],nav->gyro[2]
+		,nav->unk1
+		,nav->unk2
 		,nav->us_echo
 		,nav->acc_temp
 		,nav->gyro_temp
@@ -163,23 +163,21 @@ int nav_FlatTrim()
 	accs_offset[0]=2048;
 	accs_offset[1]=2048;
 	accs_offset[2]=2048;
-	gyros_offset[0]=1670.439941;
-	gyros_offset[1]=1664.010010;
-	gyros_offset[2]=1658.079956;
-	gyros110_offset[0]=1690.079956;
-	gyros110_offset[1]=1662.890015;
+	gyros_offset[0]=0;
+	gyros_offset[1]=0;
+	gyros_offset[2]=0;
 	//printf("nav_Calibrate bypassed\n");
 	//return 0;
 
 	struct nav_struct nav;
 	int n_samples=NUMBER_SAMPLES_TRIM;
 	int n=0; //number of samples
-	float x1[8],x2[8]; //sum and sqr sum
-	float avg[8],std[8]; //average and standard deviation
+	float x1[6],x2[6]; //sum and sqr sum
+	float avg[6],std[6]; //average and standard deviation
 	int i;
 		
 	//zero sums
-	for(i=0;i<8;i++) {x1[i]=0;x2[i]=0;}
+	for(i=0;i<6;i++) {x1[i]=0;x2[i]=0;}
 	
 	//collect n_samples samples 
 	while(n<n_samples) {
@@ -203,14 +201,10 @@ int nav_FlatTrim()
 		x2[4]+=(float)nav.gyro[1]*(float)nav.gyro[1];
 		x1[5]+=(float)nav.gyro[2];
 		x2[5]+=(float)nav.gyro[2]*(float)nav.gyro[2];
-		x1[6]+=(float)nav.gyro_110[0];
-		x2[6]+=(float)nav.gyro_110[0]*(float)nav.gyro_110[0];
-		x1[7]+=(float)nav.gyro_110[1];
-		x2[7]+=(float)nav.gyro_110[1]*(float)nav.gyro_110[1];
 	}
 	
 	//calc avg and standard deviation
-	for(i=0;i<8;i++) {
+	for(i=0;i<6;i++) {
 	  avg[i]=x1[i]/n;
 	  std[i]=(x2[i]-x1[i]*x1[i]/n)/(n-1);
 	  if(std[i]<=0) std[i]=0; else std[i]=sqrt(std[i]); //handle rounding errors
@@ -219,7 +213,7 @@ int nav_FlatTrim()
 	//validate
 	for(i=0;i<3;i++) {
 	    if(std[i]>10) {
-	        printf("Std deviation of accel channel %d is to large (%f)\n",i,std[i]);
+	        printf("Std deviation of accel channel %d is too large (%f)\n",i,std[i]);
 	        return 1+i; //validate accs
             }
         }
@@ -237,9 +231,9 @@ int nav_FlatTrim()
 	printf("nav_Calibrate: accs_offset=%f,%f,%f\n",accs_offset[0],accs_offset[1],accs_offset[2]);
 
 
-	for(i=3;i<8;i++) {
+	for(i=3;i<6;i++) {
 	    if(std[i]>10) {
-    	        printf("Std deviation of gyro channel %d is to large (%f)\n",i,std[i]);
+    	        printf("Std deviation of gyro channel %d is too large (%f)\n",i,std[i]);
     	        return 1+i; //validate gyros
             }
         }
@@ -247,11 +241,8 @@ int nav_FlatTrim()
 	gyros_offset[0]=avg[3];
 	gyros_offset[1]=avg[4];
 	gyros_offset[2]=avg[5];
-	gyros110_offset[0]=avg[6];
-	gyros110_offset[1]=avg[7];
 	
 	printf("nav_Calibrate: gyros_offset=%f,%f,%f\n",gyros_offset[0],gyros_offset[1],gyros_offset[2]);
-	printf("nav_Calibrate: gyros110_offset=%f,%f\n",gyros110_offset[0],gyros110_offset[1]);
 	
 	return 0;	
 }

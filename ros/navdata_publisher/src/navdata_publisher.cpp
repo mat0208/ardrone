@@ -53,9 +53,7 @@ int main(int argc, char **argv)
         raw.acc[i]=nav.acc[i];
         raw.gyro[i]=nav.gyro[i];
       }
-      raw.gyro_110[0]=nav.gyro_110[0];
-      raw.gyro_110[1]=nav.gyro_110[1];
-      
+
       msg.accelTemperature=nav.ta;
       msg.gyroTemperature=nav.tg;
       
