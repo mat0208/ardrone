@@ -22,5 +22,6 @@
 #define _TYPE_H
 typedef unsigned int           u32;
 typedef unsigned short int     u16;
+typedef short int	       s16;
 typedef unsigned char          u08;
 #endif

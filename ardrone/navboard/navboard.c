@@ -35,28 +35,16 @@
 #define GPIO_NAVBOARD 132
 #define READ_SIZE 58
 
+#define NUMBER_SAMPLES_TRIM 100
+
 int nav_fd;
 
 float accs_offset[]                    = { 2048, 2048, 2048 };
-const float accs_gains[]               = { 1024, 1024, 1024 };
+const float accs_gains[]               = { 512, 512, 512 }; // 512 units <-> 1 gee
 float gyros_offset[]                   = { 1350/0.806, 1350/0.806, 1350/0.806 };
 const float gyros_gains[]              = { 6.9786031e-03, 7.1979444e-03, 3.8175473e-03 }; 
 float gyros110_offset[]                = { 1350/0.806, 1350/0.806 };
 const float gyros110_gains[]           = { 1.5517747e-03, 1.5981209e-03 };
-
-//const float accs_offset[]                    = { -2.2074473e+03, 1.9672749e+03, 1.9423679e+03 };
-//const float accs_gains[]                     = {  9.6180552e-01,  2.5897421e-02,  5.7041653e-02,  
-//                                                 -1.2127322e-02, -9.9142015e-01,  2.2923036e-02,  
-//												    4.8988122e-02, -4.6047132e-02, -9.6375960e-01 };
-//const float gyros_offset[]                   = { 1.6654420e+03, 1.6706140e+03, 1.6645740e+03 };
-//const float gyros_gains[]                    = { 6.9786031e-03, -7.1979444e-03, -3.8175473e-03 };
-//const float gyros110_offset[]                = { 1.6567020e+03, 1.6819180e+03 };
-//const float gyros110_gains[]                 = { 1.5517747e-03, -1.5981209e-03 };
-
-//get a sample from the nav board (non blocking)
-//returns 0 on success
-
-
 
 int safe_read(int fd, void *target, int bytesToRead)
 {
@@ -126,13 +114,15 @@ int nav_GetSample(struct nav_struct* nav)
 	nav->ax = (((float)nav->acc[0]) - accs_offset[0]) / accs_gains[0];
 	nav->ay = (((float)nav->acc[1]) - accs_offset[1]) / accs_gains[1];
 	nav->az = (((float)nav->acc[2]) - accs_offset[2]) / accs_gains[2];
+	
+	
 	nav->gx = (((float)nav->gyro[0]) - gyros_offset[0]) * gyros_gains[0];
 	nav->gy = (((float)nav->gyro[1]) - gyros_offset[1]) * gyros_gains[1];
 	nav->gz = (((float)nav->gyro[2]) - gyros_offset[2]) * gyros_gains[2];	
 	if(nav->gx>DEG2RAD(-100) && nav->gx<DEG2RAD(100)) nav->gx = ((float)nav->gyro_110[0] - gyros110_offset[0]) * gyros110_gains[0];
 	if(nav->gy>DEG2RAD(-100) && nav->gy<DEG2RAD(100)) nav->gy = ((float)nav->gyro_110[1] - gyros110_offset[1]) * gyros110_gains[1];
 	nav->h  = (float)((nav->us_echo&0x7fff)) * 0.0340;
-  nav->h_meas = nav->us_echo >> 15;
+        nav->h_meas = nav->us_echo >> 15;
 	nav->tg  = (( (float)nav->gyro_temp * 0.806 /*mv/lsb*/ ) - 1250 /*Offset 1250mV at room temperature*/) / 4.0 /*Sensitivity 4mV/°C*/ + 20 /*room temperature*/;
 	nav->ta  = ((float)nav->acc_temp) * 0.5 /*C/lsb*/ - 30 /*Offset is -30C*/;
 	
@@ -170,9 +160,9 @@ void nav_Print(struct nav_struct* nav)
 //returns 0 on success
 int nav_FlatTrim() 
 {
-	accs_offset[0]=2122.639893;
-	accs_offset[1]=1978.560059;
-	accs_offset[2]=2012.040039;
+	accs_offset[0]=2048;
+	accs_offset[1]=2048;
+	accs_offset[2]=2048;
 	gyros_offset[0]=1670.439941;
 	gyros_offset[1]=1664.010010;
 	gyros_offset[2]=1658.079956;
@@ -182,7 +172,7 @@ int nav_FlatTrim()
 	//return 0;
 
 	struct nav_struct nav;
-	int n_samples=40;
+	int n_samples=NUMBER_SAMPLES_TRIM;
 	int n=0; //number of samples
 	float x1[8],x2[8]; //sum and sqr sum
 	float avg[8],std[8]; //average and standard deviation
@@ -233,28 +223,33 @@ int nav_FlatTrim()
 	        return 1+i; //validate accs
             }
         }
-	for(i=3;i<8;i++) {
-	    if(std[i]>10) {
-    	        printf("Std deviation of gyro channel %d is to large (%f)\n",i,std[i]);
-    	        return 1+i; //validate accs
-            }
-        }
+
         int tol=120;
 	if(avg[0]<2048-tol || avg[0]>2048+tol) {printf("nav_Calibrate: ax_avg out of tolerance: %f\r\n",avg[0]); return 10;}
 	if(avg[1]<2048-tol || avg[1]>2048+tol) {printf("nav_Calibrate: ay_avg out of tolerance: %f\r\n",avg[1]); return 11;}
-	if(avg[2]<3096-tol || avg[2]>3096+tol) {printf("nav_Calibrate: az_avg out of tolerance: %f\r\n",avg[2]); return 12;}
+	if(avg[2]<2048+accs_gains[2]-tol || avg[2]>2048+accs_gains[2]+tol) {printf("nav_Calibrate: az_avg out of tolerance: %f\r\n",avg[2]); return 12;}
 	
 	//set offsets
 	accs_offset[0]=avg[0];
 	accs_offset[1]=avg[1];
-	accs_offset[2]=avg[2]-accs_gains[2]; 
+	accs_offset[2]=avg[2]-accs_gains[2]; //1 gee  
+
+	printf("nav_Calibrate: accs_offset=%f,%f,%f\n",accs_offset[0],accs_offset[1],accs_offset[2]);
+
+
+	for(i=3;i<8;i++) {
+	    if(std[i]>10) {
+    	        printf("Std deviation of gyro channel %d is to large (%f)\n",i,std[i]);
+    	        return 1+i; //validate gyros
+            }
+        }
+
 	gyros_offset[0]=avg[3];
 	gyros_offset[1]=avg[4];
 	gyros_offset[2]=avg[5];
 	gyros110_offset[0]=avg[6];
 	gyros110_offset[1]=avg[7];
 	
-	printf("nav_Calibrate: accs_offset=%f,%f,%f\n",accs_offset[0],accs_offset[1],accs_offset[2]);
 	printf("nav_Calibrate: gyros_offset=%f,%f,%f\n",gyros_offset[0],gyros_offset[1],gyros_offset[2]);
 	printf("nav_Calibrate: gyros110_offset=%f,%f\n",gyros110_offset[0],gyros110_offset[1]);
 	
