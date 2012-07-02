@@ -54,6 +54,18 @@ int main(int argc, char **argv)
         raw.gyro[i]=nav.gyro[i];
       }
 
+      raw.unk1=nav.unk1;
+      raw.unk2=nav.unk2;
+      
+      msg.height_us=nav.h;
+      msg.height_fresh=nav.h_meas;
+      
+      raw.us_echo_high_bit=nav.us_echo >> 15;
+      raw.us_echo=nav.us_echo & 0x7fff;
+      
+      raw.us_echo_start=nav.us_echo_start;
+      raw.us_echo_end=nav.us_echo_end;
+
       msg.accelTemperature=nav.ta;
       msg.gyroTemperature=nav.tg;
       
@@ -63,9 +75,7 @@ int main(int argc, char **argv)
       raw.vrefEpson=nav.vrefEpson;
       raw.vrefIDG=nav.vrefIDG;
       
-      msg.height_us=nav.h;
-      raw.us_echo_start=nav.us_echo_start;
-      raw.us_echo_end=nav.us_echo_end;
+      
       raw.us_association_echo=nav.us_association_echo;
       raw.us_distance_echo=nav.us_distance_echo;
       raw.us_courbe_temps=nav.us_courbe_temps;

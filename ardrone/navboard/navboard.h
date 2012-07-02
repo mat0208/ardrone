@@ -55,20 +55,20 @@ struct nav_struct
 	s16 gyro[3];             // +0x0A Raw data for the gyros, 16-bit gyro values
 	u16 unk1;    
         u16 unk2;
-	u16 acc_temp;            // +0x14 Accs temperature -- startup value 120 @ 25C, rising to 143
-	u16 gyro_temp;           // +0x16 XYGyro temperature (IDG), 12-bit A/D converted voltage of IDG's temperature sensor -- startup value 1532 @ 25C, rising to 1572
-	u16 vrefEpson;           // +0x18 ZGyro v_ref (Epson), 12-bit A/D converted reference voltage of the Epson sensor  
-	u16 vrefIDG;             // +0x1A XYGyro v_ref (IDG), 12-bit A/D converted reference voltage of the IDG sensor   
 	u16 us_echo;             // +0x1C bit15=1 echo pulse transmitted, bit14-0 first echo. Value 30 = 1cm. min value: 784 = 26cm
-	u16 checksum;            // +0x1E Checksum = sum of all values except checksum (22 values)
 	u16 us_echo_start;       // +0x20 Array with starts of echos (8 array values @ 25Hz, 9 values @ 22.22Hz)
 	u16 us_echo_end;         // +0x22 Array with ends of echos   (8 array values @ 25Hz, 9 values @ 22.22Hz)
-	u16 us_association_echo; // +0x24 Ultrasonic parameter -- echo number starting with 0. max value 3758. examples: 0,1,2,3,4,5,6,7  ; 0,1,2,3,4,86,6,9
-	u16 us_distance_echo;    // +0x26 Ultrasonic parameter -- no clear pattern
-	u16 us_courbe_temps;     // +0x28 Ultrasonic parameter -- counts up from 0 to approx 24346 in 192 sample cycles of which 12 cylces have value 0
-	u16 us_courbe_valeur;    // +0x2A Ultrasonic parameter -- value between 0 and 4000, no clear pattern. 192 sample cycles of which 12 cylces have value 0
-	u16 us_courbe_ref;       // +0x2C Ultrasonic parameter -- coutns down from 4000 to 0 in 192 sample cycles of which 12 cylces have value 0
-	u16 newStuff[7]; 	 //  unknown
+	u16 acc_temp;            // unknown +0x14 Accs temperature -- startup value 120 @ 25C, rising to 143
+	u16 gyro_temp;           // unknown +0x16 XYGyro temperature (IDG), 12-bit A/D converted voltage of IDG's temperature sensor -- startup value 1532 @ 25C, rising to 1572
+	u16 vrefEpson;           // unknown +0x18 ZGyro v_ref (Epson), 12-bit A/D converted reference voltage of the Epson sensor  
+	u16 vrefIDG;             // unknown +0x1A XYGyro v_ref (IDG), 12-bit A/D converted reference voltage of the IDG sensor   
+	u16 checksum;            // unknown +0x1E Checksum = sum of all values except checksum (22 values)
+	u16 us_association_echo; // unknown +0x24 Ultrasonic parameter -- echo number starting with 0. max value 3758. examples: 0,1,2,3,4,5,6,7  ; 0,1,2,3,4,86,6,9
+	u16 us_distance_echo;    // unknown +0x26 Ultrasonic parameter -- no clear pattern
+	u16 us_courbe_temps;     // unknown +0x28 Ultrasonic parameter -- counts up from 0 to approx 24346 in 192 sample cycles of which 12 cylces have value 0
+	u16 us_courbe_valeur;    // unknown +0x2A Ultrasonic parameter -- value between 0 and 4000, no clear pattern. 192 sample cycles of which 12 cylces have value 0
+	u16 us_courbe_ref;       // unknown +0x2C Ultrasonic parameter -- coutns down from 4000 to 0 in 192 sample cycles of which 12 cylces have value 0
+	u16 newStuff[7]; 	 // unknown
 	
 	//end of data received from nav board  
 	double ts; //timestamp in seconds with microsecond resolution
@@ -76,9 +76,9 @@ struct nav_struct
 	float ax;   // acceleration x-axis in [G] front facing up is positive         
 	float ay;   // acceleration y-axis in [G] left facing up is positive                
 	float az;   // acceleration z-axis in [G] top facing up is positive             
-	float gx;   // gyro value x-axis in [rad/sec] right turn, i.e. roll right is positive           
-	float gy;   // gyro value y-axis in [rad/sec] right turn, i.e. pirch down is positive                     
-	float gz;   // gyro value z-axis in [rad/sec] right turn, i.e. yaw left is positive                           
+	float gx;   // gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive           
+	float gy;   // gyro value y-axis in [deg/sec] right turn, i.e. pirch down is positive                     
+	float gz;   // gyro value z-axis in [deg/sec] right turn, i.e. yaw left is positive                           
 	float h;    // height above ground in [cm] 
         char h_meas;// 1 if this is a new h measurement, 0 otherwise
 	float ta;   // temperature acc

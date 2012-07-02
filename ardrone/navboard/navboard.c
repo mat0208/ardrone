@@ -86,15 +86,15 @@ int nav_GetSample(struct nav_struct* nav)
 		+(u16)nav->gyro[0]
 		+(u16)nav->gyro[1]
 		+(u16)nav->gyro[2]
+		+nav->us_echo
+		+nav->us_echo_start
+		+nav->us_echo_end
 		+nav->unk1
 		+nav->unk2
 		+nav->acc_temp
 		+nav->gyro_temp
 		+nav->vrefEpson
 		+nav->vrefIDG
-		+nav->us_echo
-		+nav->us_echo_start
-		+nav->us_echo_end
 		+nav->us_association_echo
 		+nav->us_distance_echo
 		+nav->us_courbe_temps
