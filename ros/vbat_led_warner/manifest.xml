@@ -1,0 +1,16 @@
+<package>
+  <description brief="vbat_led_warner">
+
+     vbat_led_warner
+
+  </description>
+  <author>dsk7</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/vbat_led_warner</url>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  
+</package>
+
+

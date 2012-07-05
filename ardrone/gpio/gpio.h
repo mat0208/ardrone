@@ -20,8 +20,19 @@
 */
 #ifndef _GPIO_H
 #define _GPIO_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //val=0 -> set gpio output lo
 //val=1 -> set gpio output hi
 //val=-1 -> set gpio as input (output hi-Z)
 int gpio_set(int nr,int val);
+
+#ifdef __cplusplus
+}
+#endif
+
+
 #endif

@@ -1,0 +1,30 @@
+/**
+\mainpage
+\htmlinclude manifest.html
+
+\b vbat_led_warner is a tool to visualize the vbat data using the bottom led
+12V + green
+11V - 12V yellow
+10V - 11V red
+< 10V shuts down the drone
+
+<!-- 
+Provide an overview of your package.
+-->
+
+
+\section codeapi Code API
+
+<!--
+Provide links to specific auto-generated API documentation within your
+package that is of particular interest to a reader. Doxygen will
+document pretty much every part of your code, so do your best here to
+point the reader to the actual API.
+
+If your codebase is fairly large or has different sets of APIs, you
+should use the doxygen 'group' tag to keep these APIs together. For
+example, the roscpp documentation has 'libros' group.
+-->
+
+
+*/

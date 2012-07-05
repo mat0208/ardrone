@@ -32,6 +32,8 @@
 
 #define I2CDEV "/dev/i2c-1"
 
+#define CONVERSION_FACTOR (14.0/1024)
+
 int fd;
 
 float vbat_get(unsigned char channel) 
@@ -51,9 +53,8 @@ float vbat_get(unsigned char channel)
 //	printf ("U: %02X L: %02X\n",upper,lower);
 	
 	unsigned value = (upper<<8 | lower) >> 6;
-	float factor=1.0;
 	
-	float v = value * factor;
+	float v = value * CONVERSION_FACTOR;
 	return v;
 }
 
