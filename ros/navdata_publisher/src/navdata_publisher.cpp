@@ -48,14 +48,24 @@ int main(int argc, char **argv)
       msg.gyro[0]=nav.gx;
       msg.gyro[1]=nav.gy;
       msg.gyro[2]=nav.gz;
+      msg.orientation_mag[0]=nav.mag_x;
+      msg.orientation_mag[1]=nav.mag_y;
+      msg.orientation_mag[2]=nav.mag_z;
 
       for (int i=0;i<3;i++) { 
         raw.acc[i]=nav.acc[i];
         raw.gyro[i]=nav.gyro[i];
+        raw.mag[i]=nav.mag[i];
       }
 
       raw.unk1=nav.unk1;
       raw.unk2=nav.unk2;
+      raw.unk3=nav.unk3;
+      raw.unk4=nav.unk4;
+      raw.unk5=nav.unk5;
+      raw.unk6=nav.unk6;
+      raw.unk7=nav.unk7;
+      raw.unk8=nav.unk8;
       
       msg.height_us=nav.h;
       msg.height_fresh=nav.h_meas;
@@ -65,28 +75,17 @@ int main(int argc, char **argv)
       
       raw.us_echo_start=nav.us_echo_start;
       raw.us_echo_end=nav.us_echo_end;
-
-      msg.accelTemperature=nav.ta;
-      msg.gyroTemperature=nav.tg;
-      
-      raw.acc_temp=nav.acc_temp;
-      raw.gyro_temp=nav.gyro_temp;
-      
-      raw.vrefEpson=nav.vrefEpson;
-      raw.vrefIDG=nav.vrefIDG;
-      
       
       raw.us_association_echo=nav.us_association_echo;
       raw.us_distance_echo=nav.us_distance_echo;
       raw.us_courbe_temps=nav.us_courbe_temps;
       raw.us_courbe_valeur=nav.us_courbe_valeur;
-      raw.us_courbe_ref=nav.us_courbe_ref;
+      raw.us_number_echo=nav.us_number_echo;
+      raw.us_sum_echo=(nav.us_sum_echo_2 <<16) + nav.us_sum_echo_1;
       
-      for(int i=0;i<7;i++) {
-        msg.newFloat[i]=nav.newStuff[i]*1.0;
-        raw.newUint16[i]=nav.newStuff[i];
-      }
-  
+      msg.us_initialized=nav.us_initialized;
+      raw.us_initialized=nav.us_initialized;
+      
       navdata_pub.publish(msg);
       rawNavdata_pub.publish(raw);
     }

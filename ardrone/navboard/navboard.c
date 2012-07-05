@@ -43,6 +43,11 @@ float accs_offset[]                    = { 2048, 2048, 2048 };
 const float accs_gains[]               = { 512, 512, 512 }; // 512 units <-> 1 gee
 float gyros_offset[]                   = { 0,0,0 };
 const float gyros_gains[]              = { 2000.0/32767.0, 2000.0/32767.0, 2000.0/32767.0  }; 
+float mag_offset[]                     = { 0,0,0 };
+const float mag_gains[]                = { 1.0, 1.0, 1.0  }; 
+
+
+
 
 int safe_read(int fd, void *target, int bytesToRead)
 {
@@ -78,28 +83,7 @@ int nav_GetSample(struct nav_struct* nav)
         }
         
 	//check data is valid
-	u16 checksum	
-		=nav->seq
-		+nav->acc[0]
-		+nav->acc[1]
-		+nav->acc[2]
-		+(u16)nav->gyro[0]
-		+(u16)nav->gyro[1]
-		+(u16)nav->gyro[2]
-		+nav->us_echo
-		+nav->us_echo_start
-		+nav->us_echo_end
-		+nav->unk1
-		+nav->unk2
-		+nav->acc_temp
-		+nav->gyro_temp
-		+nav->vrefEpson
-		+nav->vrefIDG
-		+nav->us_association_echo
-		+nav->us_distance_echo
-		+nav->us_courbe_temps
-		+nav->us_courbe_valeur
-		+nav->us_courbe_ref; 
+	u16 checksum=0; /** @todo calculate checksum */
 	
 //	if(nav->checksum!=checksum) return 3; //checksum incorrect
 	
@@ -117,12 +101,15 @@ int nav_GetSample(struct nav_struct* nav)
 	nav->gx = (((float)nav->gyro[0]) - gyros_offset[0]) * gyros_gains[0];
 	nav->gy = (((float)nav->gyro[1]) - gyros_offset[1]) * gyros_gains[1];
 	nav->gz = (((float)nav->gyro[2]) - gyros_offset[2]) * gyros_gains[2];	
+	
+	nav->mag_x = (((float)nav->mag[0]) - mag_offset[0]) * mag_gains[0];
+	nav->mag_y = (((float)nav->mag[1]) - mag_offset[1]) * mag_gains[1];
+	nav->mag_z = (((float)nav->mag[2]) - mag_offset[2]) * mag_gains[2];	
+	
 
 
 	nav->h  = (float)((nav->us_echo&0x7fff)) * 0.0340;
         nav->h_meas = nav->us_echo >> 15;
-	nav->tg  = (( (float)nav->gyro_temp * 0.806 /*mv/lsb*/ ) - 1250 /*Offset 1250mV at room temperature*/) / 4.0 /*Sensitivity 4mV/°C*/ + 20 /*room temperature*/;
-	nav->ta  = ((float)nav->acc_temp) * 0.5 /*C/lsb*/ - 30 /*Offset is -30C*/;
 	
 	return 0;
 }
@@ -130,16 +117,14 @@ int nav_GetSample(struct nav_struct* nav)
 void nav_Print(struct nav_struct* nav) 
 {
 
-	printf("RAW seq=%d a=%5d,%5d,%5d g=%5d,%5d,%5d unk=%5d,%5d h=%5d ta=%5d tg=%5d\nu=%5d,%5d,%5d,%5d,%5d,%5d,%5d\n\n"
+	printf("RAW seq=%d a=%5d,%5d,%5d g=%5d,%5d,%5d unk=%5d,%5d h=%5d \nmag=%5d,%5d,%5d\n\n"
 		,nav->seq
 		,nav->acc[0],nav->acc[1],nav->acc[2]
 		,nav->gyro[0],nav->gyro[1],nav->gyro[2]
 		,nav->unk1
 		,nav->unk2
 		,nav->us_echo
-		,nav->acc_temp
-		,nav->gyro_temp
-		,nav->newStuff[0],nav->newStuff[1],nav->newStuff[2],nav->newStuff[3],nav->newStuff[4],nav->newStuff[5],nav->newStuff[6]
+		,nav->mag[0],nav->mag[1],nav->mag[2]
 		
 	);
 	

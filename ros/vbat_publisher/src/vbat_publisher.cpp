@@ -25,6 +25,7 @@ int main(int argc, char **argv)
     msg.data=vbat.vbat;
   
     batter_pub.publish(msg);
+    printf("VBAT is %f\n",vbat.vbat);
 
 
     ros::spinOnce();

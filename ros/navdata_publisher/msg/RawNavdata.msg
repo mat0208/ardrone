@@ -7,15 +7,19 @@ byte   us_echo_high_bit
 uint16 us_echo
 uint16 us_echo_start
 uint16 us_echo_end
-uint16 acc_temp
-uint16 gyro_temp
-uint16 vrefEpson
-uint16 vrefIDG
 uint16 us_association_echo
 uint16 us_distance_echo
 uint16 us_courbe_temps
 uint16 us_courbe_valeur
-uint16 us_courbe_ref
-uint16[7] newUint16
+uint16 unk3
+uint16 us_number_echo
+uint16 unk4
+uint32 us_sum_echo
+uint16 us_initialized
+uint16 unk5
+uint16 unk6
+uint16 unk7
+int16[3] mag
+uint16 unk8 	
 
 
