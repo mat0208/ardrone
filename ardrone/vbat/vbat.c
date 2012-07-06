@@ -32,83 +32,97 @@
 
 #define I2CDEV "/dev/i2c-1"
 
-#define CONVERSION_FACTOR (14.0/1024)
+#define CONVERSION_FACTOR (13.781/1024)
 
 int fd;
 
-float vbat_get(unsigned char channel) 
+float
+get_factor ()
 {
-	if(channel>9) return -1;
+  const char *env_factor = getenv ("CONVERSION_FACTOR");
+  if (env_factor) {
+    float fac = atof (env_factor);
+    if (fac > 0.0) {
+      return fac / 1024;
+    }
+  }
+  return CONVERSION_FACTOR;
+}
 
-	 if( i2c_smbus_write_byte_data( fd, 0x12, 0x20))   {
-                 fprintf( stderr, "Failed to write to I2C device (4)\n" );
-        	 return -1.0;
-         }
-                                         
-                                         
+float
+vbat_get (unsigned char channel)
+{
+  if (channel > 9)
+    return -1;
+  //START CONVERSION
+  if (i2c_smbus_write_byte_data (fd, 0x12, 0x20)) {
+    fprintf (stderr, "Failed to write to I2C device (4)\n");
+    return -1.0;
+  }
 
-	unsigned lower = i2c_smbus_read_byte_data(fd, 0x37 );
-	unsigned upper = i2c_smbus_read_byte_data(fd, 0x38 );
-	
-//	printf ("U: %02X L: %02X\n",upper,lower);
-	
-	unsigned value = (upper<<8 | lower) >> 6;
-	
-	float v = value * CONVERSION_FACTOR;
-	return v;
+  unsigned lower = i2c_smbus_read_byte_data (fd, 0x37);
+  unsigned upper = i2c_smbus_read_byte_data (fd, 0x38);
+
+//      printf ("U: %02X L: %02X\n",upper,lower);
+
+  unsigned value = (upper << 8 | lower) >> 6;
+
+  float v = value * get_factor ();
+  return v;
 }
 
 
 
-int vbat_init(struct vbat_struct *vbat)
+int
+vbat_init (struct vbat_struct *vbat)
 {
-	fd = open( I2CDEV, O_RDWR );
+  fd = open (I2CDEV, O_RDWR);
 
-	if( ioctl( fd, I2C_SLAVE_FORCE, VBAT_ADDRESS ) < 0 )
-	{
-	fprintf( stderr, "Failed to set slave address: %m\n" );
-	return 1;
-	}
+  if (ioctl (fd, I2C_SLAVE_FORCE, VBAT_ADDRESS) < 0) {
+    fprintf (stderr, "Failed to set slave address: %m\n");
+    return 1;
+  }
 
-	//SET_POWER_ON
-	if( i2c_smbus_write_byte_data( fd, 0x0, 0x1))   {	
-		fprintf( stderr, "Failed to write to I2C device (1)\n" );
-		return 2;
-	}
+  //SET_POWER_ON
+  if (i2c_smbus_write_byte_data (fd, 0x0, 0x1)) {
+    fprintf (stderr, "Failed to write to I2C device (1)\n");
+    return 2;
+  }
 
-	//SELECT CHANNEL
-	if( i2c_smbus_write_byte_data( fd, 0x6, 0x1))   {	
-		fprintf( stderr, "Failed to write to I2C device (2)\n" );
-		return 2;
-	}
-	
-	
-	//ENABLE AVERAGING
-	if( i2c_smbus_write_byte_data( fd, 0x8, 0x1))   {	
-		fprintf( stderr, "Failed to write to I2C device (3)\n" );
-		return 2;
-	}
-	
-	
-	//DISABLE (?) INTERRUPT
-	if( i2c_smbus_write_byte_data( fd, 0x62, 0xF))   {	
-		fprintf( stderr, "Failed to write to I2C device (4)\n" );
-		return 2;
-	}
-	
-	
-	//START CONVERSION
-	if( i2c_smbus_write_byte_data( fd, 0x12, 0x20))   {	
-		fprintf( stderr, "Failed to write to I2C device (4)\n" );
-		return 2;
-	}
-	
-	
-	return 0;
+  //SELECT CHANNEL
+  if (i2c_smbus_write_byte_data (fd, 0x6, 0x1)) {
+    fprintf (stderr, "Failed to write to I2C device (2)\n");
+    return 2;
+  }
+
+
+  //ENABLE AVERAGING
+  if (i2c_smbus_write_byte_data (fd, 0x8, 0x1)) {
+    fprintf (stderr, "Failed to write to I2C device (3)\n");
+    return 2;
+  }
+
+
+  //DISABLE (?) INTERRUPT
+  if (i2c_smbus_write_byte_data (fd, 0x62, 0xF)) {
+    fprintf (stderr, "Failed to write to I2C device (4)\n");
+    return 2;
+  }
+
+
+  //START CONVERSION
+  if (i2c_smbus_write_byte_data (fd, 0x12, 0x20)) {
+    fprintf (stderr, "Failed to write to I2C device (4)\n");
+    return 2;
+  }
+
+
+  return 0;
 }
 
-int vbat_read(struct vbat_struct *vbat)
+int
+vbat_read (struct vbat_struct *vbat)
 {
-	vbat->vbat=vbat_get(0);
-	return 0;
+  vbat->vbat = vbat_get (0);
+  return 0;
 }

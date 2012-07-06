@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 	while(1) {
 		vbat_read(&vbat);
 		printf("Vbat=%5.2fV\n",vbat.vbat);
-		usleep(100000);
+		usleep(1000000);
 	}
 
 	return 0;
