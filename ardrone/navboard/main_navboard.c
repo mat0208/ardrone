@@ -36,7 +36,7 @@
 int main()
 {
 	int rc;
-	nav_struct nav;
+	struct nav_struct nav;
 	
 	printf("Nav board test program\r\n");
 
