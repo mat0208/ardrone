@@ -42,7 +42,7 @@ struct mot_struct
 };
 pthread_t mot_thread;
 pthread_mutex_t mot_mutex;
-mot_struct mot;
+struct mot_struct mot;
 
 
 //mot thread
@@ -95,16 +95,16 @@ void mot_SetLed(u08 mot_id, u08 led)
   mot_id &= 3;
   led &= 3;
   pthread_mutex_lock(&mot_mutex);
-  if(mot.led[mot_id]!=led&3) {mot.led[mot_id]=led&3; mot.NeedToSendLedCmd=1;}
+  if(mot.led[mot_id]!= (led&3)) {mot.led[mot_id]=led&3; mot.NeedToSendLedCmd=1;}
   pthread_mutex_unlock(&mot_mutex);
 }
 
 void mot_SetLeds(u08 led0, u08 led1, u08 led2, u08 led3) {
   pthread_mutex_lock(&mot_mutex);
-  if(mot.led[0]!=led0&3) {mot.led[0]=led0&3; mot.NeedToSendLedCmd=1;}
-  if(mot.led[1]!=led1&3) {mot.led[1]=led1&3; mot.NeedToSendLedCmd=1;}
-  if(mot.led[2]!=led2&3) {mot.led[2]=led2&3; mot.NeedToSendLedCmd=1;}
-  if(mot.led[3]!=led3&3) {mot.led[3]=led3&3; mot.NeedToSendLedCmd=1;}
+  if(mot.led[0]!=(led0&3)) {mot.led[0]=led0&3; mot.NeedToSendLedCmd=1;}
+  if(mot.led[1]!=(led1&3)) {mot.led[1]=led1&3; mot.NeedToSendLedCmd=1;}
+  if(mot.led[2]!=(led2&3)) {mot.led[2]=led2&3; mot.NeedToSendLedCmd=1;}
+  if(mot.led[3]!=(led3&3)) {mot.led[3]=led3&3; mot.NeedToSendLedCmd=1;}
   pthread_mutex_unlock(&mot_mutex);
 }  
 

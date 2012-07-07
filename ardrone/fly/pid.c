@@ -20,7 +20,7 @@
 */
 #include "pid.h"
 
-void pid_Init(pid_struct *pid, float kp, float ki, float kd, float i_max) 
+void pid_Init(struct pid_struct *pid, float kp, float ki, float kd, float i_max) 
 {
 	pid->kp=kp;
 	pid->ki=ki;
@@ -30,7 +30,7 @@ void pid_Init(pid_struct *pid, float kp, float ki, float kd, float i_max)
 	pid->e_prev=0;
 }
 
-float pid_CalcD(pid_struct *pid, float error, float dt, float d)
+float pid_CalcD(struct pid_struct *pid, float error, float dt, float d)
 {
 	pid->i += error * dt;
 	if(pid->i > pid->i_max) pid->i = pid->i_max;
@@ -40,7 +40,7 @@ float pid_CalcD(pid_struct *pid, float error, float dt, float d)
 	return out;
 }
 
-float pid_Calc(pid_struct *pid, float error, float dt)
+float pid_Calc(struct pid_struct *pid, float error, float dt)
 {
 	return pid_CalcD(pid,  error, dt, (error - pid->e_prev)/dt);
 }

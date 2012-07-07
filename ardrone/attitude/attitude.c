@@ -73,9 +73,9 @@ float lr_slope(float y) {
 
 
 
-nav_struct nav;
-ars_Gyro1DKalman ars_roll; 
-ars_Gyro1DKalman ars_pitch; 
+struct nav_struct nav;
+struct ars_Gyro1DKalman ars_roll; 
+struct ars_Gyro1DKalman ars_pitch; 
 
 //roll angle from acc in radians
 float roll(float a_z, float a_y)
@@ -89,7 +89,7 @@ float pitch(float a_z, float a_x)
 	return -atan2(a_x, a_z);
 }
 
-void att_Print(att_struct *att)
+void att_Print(struct att_struct *att)
 {
 	printf("roll=%5.1f,a=%5.1f,g=%5.1f pitch=%5.1f,a=%5.1f,g=%5.1f yaw=%5.1f h=%5.1f dt=%4.1f\n"
 		,RAD2DEG(att->roll),  RAD2DEG(att->roll_a),  RAD2DEG(att->roll_g)
@@ -103,7 +103,7 @@ void att_Print(att_struct *att)
 float last_h;
 float last_ts;
 
-int att_GetSample(att_struct *att) 
+int att_GetSample(struct att_struct *att) 
 {
 	int rc;
 	
@@ -175,7 +175,7 @@ int att_GetSample(att_struct *att)
 	return 0;
 }
 
-int att_FlatTrim(att_struct *att) 
+int att_FlatTrim(struct att_struct *att) 
 {
 	int rc;
   //calibrate
@@ -202,7 +202,7 @@ int att_FlatTrim(att_struct *att)
   return rc;
 }
 
-int att_Init(att_struct *att) 
+int att_Init(struct att_struct *att) 
 {
 	int rc;
 	

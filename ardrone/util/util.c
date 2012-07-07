@@ -30,18 +30,18 @@
 //non blocking getchar
 int util_getch(void)
 {
-struct termios oldt,
-newt;
-int ch=-1;
-tcgetattr( STDIN_FILENO, &oldt );
-newt = oldt;
-newt.c_lflag &= ~( ICANON | ECHO );
-tcsetattr( STDIN_FILENO, TCSANOW, &newt );
-fcntl(STDIN_FILENO, F_SETFL, FNDELAY);
-ch = getchar();
-fcntl(STDIN_FILENO, F_SETFL, 0);
-tcsetattr( STDIN_FILENO, TCSANOW, &oldt );
-return ch;
+  struct termios oldt,
+  newt;
+  int ch=-1;
+  tcgetattr( STDIN_FILENO, &oldt );
+  newt = oldt;
+  newt.c_lflag &= ~( ICANON | ECHO );
+  tcsetattr( STDIN_FILENO, TCSANOW, &newt );
+  fcntl(STDIN_FILENO, F_SETFL, O_NDELAY);
+  ch = getchar();
+  fcntl(STDIN_FILENO, F_SETFL, 0);
+  tcsetattr( STDIN_FILENO, TCSANOW, &oldt );
+  return ch;
 }
 
 //return timestamp in seconds with microsecond resolution

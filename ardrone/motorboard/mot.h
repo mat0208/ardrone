@@ -21,6 +21,10 @@
 #ifndef _MOT_H
 #define _MOT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "../util/type.h"
 #include "motorboard.h"
 
@@ -31,5 +35,9 @@ void mot_Stop();
 void mot_Run(float m0, float m1, float m2, float m3);
 void mot_GetMot(float *m);
 void mot_Close();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

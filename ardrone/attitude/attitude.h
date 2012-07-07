@@ -21,6 +21,10 @@
 #ifndef _ATTITUDE_H
 #define _ATTITUDE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct att_struct {
   //pitch estimates in radians, positive is pitch down (fly forward)
   float pitch_g;  //=sum(gx * dt)
@@ -53,10 +57,16 @@ struct att_struct {
 	float gz;   // gyro value z-axis in [rad/sec] right turn, i.e. yaw left is positive 
 };
 
-int att_Init(att_struct *att);
-int att_Init(att_struct *att);
-int att_GetSample(att_struct *att);
-int att_FlatTrim(att_struct *att); //recalibrate
-void att_Print(att_struct *att);
+int att_Init(struct att_struct *att);
+int att_Init(struct att_struct *att);
+int att_GetSample(struct att_struct *att);
+int att_FlatTrim(struct att_struct *att); //recalibrate
+void att_Print(struct att_struct *att);
 void att_Close();
+
+#ifdef __cplusplus
+}
+#endif
+
+
 #endif

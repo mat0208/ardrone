@@ -44,7 +44,7 @@ int main()
 {
   printf("'fly' version 1.00 - Copyright (C) 2011 Hugo Perquin - http://blog.perquin.com\n");
   //wait for udp packet on port 7777
-  udp_struct udpCmd;
+  struct udp_struct udpCmd;
   udpServer_Init(&udpCmd,7777,1/*blocking*/);
   char buf[1024];
   printf("Waiting for UDP wakeup on port 7777\n");
