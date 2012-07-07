@@ -23,7 +23,7 @@
 #include "vbat.h"
 
 int main(int argc, char *argv[]) {
-	vbat_struct vbat;
+	struct vbat_struct vbat;
 
 	if(vbat_init(&vbat)) return 1;
 
