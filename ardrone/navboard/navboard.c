@@ -35,14 +35,20 @@
 #define GPIO_NAVBOARD 132
 #define READ_SIZE 58
 
-#define NUMBER_SAMPLES_TRIM 100
+#define NUMBER_SAMPLES_TRIM 200
+
+
+#define GEE 9.81
+
+#define GYRO_RAW_MAX 32767.0
+#define GYRO_VAL_MAX_RADIANS_PER_SEC DEG2RAD(2000.0)
 
 int nav_fd;
 
 float accs_offset[]                    = { 2048, 2048, 2048 };
-const float accs_gains[]               = { 512, 512, 512 }; // 512 units <-> 1 gee
+const float accs_gains[]               = { 512/9.81, 512/9.81, 512/9.81 }; // 512 units <-> 1 gee
 float gyros_offset[]                   = { 0,0,0 };
-const float gyros_gains[]              = { 2000.0/32767.0, 2000.0/32767.0, 2000.0/32767.0  }; 
+const float gyros_gains[]              = { GYRO_VAL_MAX_RADIANS_PER_SEC/GYRO_RAW_MAX,GYRO_VAL_MAX_RADIANS_PER_SEC/GYRO_RAW_MAX,GYRO_VAL_MAX_RADIANS_PER_SEC/GYRO_RAW_MAX }; 
 float mag_offset[]                     = { 0,0,0 };
 const float mag_gains[]                = { 1.0, 1.0, 1.0  }; 
 
@@ -108,7 +114,7 @@ int nav_GetSample(struct nav_struct* nav)
 	
 
 
-	nav->h  = (float)((nav->us_echo&0x7fff)) * 0.0340;
+	nav->h  = (float)((nav->us_echo&0x7fff)) * 0.000340;
         nav->h_meas = nav->us_echo >> 15;
 	
 	return 0;
@@ -117,7 +123,7 @@ int nav_GetSample(struct nav_struct* nav)
 void nav_Print(struct nav_struct* nav) 
 {
 
-	printf("RAW seq=%d a=%5d,%5d,%5d g=%5d,%5d,%5d unk=%5d,%5d h=%5d \nmag=%5d,%5d,%5d\n\n"
+	printf("RAW seq=%d a=%5d,%5d,%5d g=%5d,%5d,%5d unk=%5d,%5d h=%5d \nmag=%5d,%5d,%5d\n"
 		,nav->seq
 		,nav->acc[0],nav->acc[1],nav->acc[2]
 		,nav->gyro[0],nav->gyro[1],nav->gyro[2]
@@ -128,15 +134,13 @@ void nav_Print(struct nav_struct* nav)
 		
 	);
 	
-/*	printf("a=%6.3f,%6.3f,%6.3fG g=%4.0f,%4.0f,%4.0fdeg/s h=%3.0fcm ta=%4.1fC tg=%4.1fC dt=%2.0fms\n"
+	printf("a=%6.3f,%6.3f,%6.3f m/s² g=%+4.2f,%+4.2f,%+4.2fdeg/s h=%3.0fm dt=%2.0fms\n\n"
 		,nav->seq
 		,nav->ax,nav->ay,nav->az
 		,RAD2DEG(nav->gx),RAD2DEG(nav->gy),RAD2DEG(nav->gz)
 		,nav->h
-		,nav->ta
-		,nav->tg
 		,nav->dt*1000
-	);*/
+	);
 }
 
 
@@ -203,10 +207,14 @@ int nav_FlatTrim()
             }
         }
 
-        int tol=120;
+        int tol=1200;
 	if(avg[0]<2048-tol || avg[0]>2048+tol) {printf("nav_Calibrate: ax_avg out of tolerance: %f\r\n",avg[0]); return 10;}
 	if(avg[1]<2048-tol || avg[1]>2048+tol) {printf("nav_Calibrate: ay_avg out of tolerance: %f\r\n",avg[1]); return 11;}
-	if(avg[2]<2048+accs_gains[2]-tol || avg[2]>2048+accs_gains[2]+tol) {printf("nav_Calibrate: az_avg out of tolerance: %f\r\n",avg[2]); return 12;}
+	
+	float az_min=2048+accs_gains[2]*GEE-tol;
+	float az_max=2048+accs_gains[2]*GEE+tol;
+	
+	if(avg[2]<az_min || avg[2]>az_max) {printf("nav_Calibrate: az_avg out of tolerance: %f < %f < %f \r\n",az_min,avg[2],az_max); return 12;}
 	
 	//set offsets
 	accs_offset[0]=avg[0];

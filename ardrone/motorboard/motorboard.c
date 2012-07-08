@@ -42,6 +42,8 @@ PWM   A
 #include "motorboard.h"
 
 
+// #define MOTOR_DRY_RUN // define this to skip the send of pwm commands to the motors (testing)
+
 #define MOTOR_UART "/dev/ttyO0"
 #define GPIO_M1 78
 #define GPIO_M2 79
@@ -240,6 +242,11 @@ FF1 Delay 2 seconds after sending FFs
 //cmd = 001aaaaa aaaabbbb bbbbbccc ccccccdd ddddddd0 
 void motorboard_SetPWM(u16 pwm0, u16 pwm1, u16 pwm2, u16 pwm3)
 {
+
+#ifdef MOTOR_DRY_RUN
+	printf("PWM: %3d %3d %3d %3d\n",pwm0,pwm1,pwm2,pwm3);
+	return;
+#else
 	u08 cmd[5];
 	cmd[0] = 0x20 | ((pwm0&0x1ff)>>4);
 	cmd[1] = ((pwm0&0x1ff)<<4) | ((pwm1&0x1ff)>>5);
@@ -247,6 +254,7 @@ void motorboard_SetPWM(u16 pwm0, u16 pwm1, u16 pwm2, u16 pwm3)
 	cmd[3] = ((pwm2&0x1ff)<<2) | ((pwm3&0x1ff)>>7);
 	cmd[4] = ((pwm3&0x1ff)<<1);
 	write(mot_fd, cmd, 5);
+#endif
 }
 
 //write led command

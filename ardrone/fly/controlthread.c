@@ -58,11 +58,11 @@ struct att_struct att;
 struct setpoint_struct {
   float pitch;     //radians  
   float roll;      //radians     
-  float yaw;     //yaw in radians   
-  float h;         //cm
+  float yaw;       //radians   
+  float h;         //meters
   float pitch_roll_max; //radians     
-  float h_max; //cm
-  float h_min; //cm
+  float h_max; //m
+  float h_min; //m
   float throttle_hover; //hover throttle setting
   float throttle_min; //min throttle (while flying)
   float throttle_max; //max throttle (while flying)
@@ -80,8 +80,8 @@ int ctl_Init(char *client_addr)
 	//defaults from AR.Drone app:  pitch,roll max=12deg; yawspeed max=100deg/sec; height limit=on; vertical speed max=700mm/sec; 
 	setpoint.pitch_roll_max=DEG2RAD(12); //degrees     
   //setpoint.yawsp_max=DEG2RAD(100); //degrees/sec
-  setpoint.h_max=600; //cm
-  setpoint.h_min=40; //cm
+  setpoint.h_max=6.00; 
+  setpoint.h_min=0.40; 
   setpoint.throttle_hover=0.66;
   setpoint.throttle_min=0.50;
   setpoint.throttle_max=0.85;
@@ -90,7 +90,7 @@ int ctl_Init(char *client_addr)
 	pid_Init(&pid_roll,  0.50,0,0,0);
 	pid_Init(&pid_pitch, 0.50,0,0,0);
 	pid_Init(&pid_yaw,   1.00,0,0,0);
-	pid_Init(&pid_h,     0.0005,0,0,0);
+	pid_Init(&pid_h,     0.05,0,0,0);
 
   throttle=0.00;
 
@@ -100,9 +100,11 @@ int ctl_Init(char *client_addr)
 
   
   //udp logger
-  udpClient_Init(&udpNavLog, client_addr, 7778);
-  navLog_Send();
-  printf("udpClient_Init\n", rc);
+  if(client_addr) { 
+    udpClient_Init(&udpNavLog, client_addr, 7778);
+    navLog_Send();
+    printf("udpClient_Init\n", rc);
+  }
   
 	//start motor thread
 	rc = mot_Init();
@@ -154,6 +156,9 @@ void *ctl_thread_main(void* data)
       if(throttle < setpoint.throttle_min) throttle = setpoint.throttle_min;
       if(throttle > setpoint.throttle_max) throttle = setpoint.throttle_max;      
     }
+    printf("SET ROLL %5.2f PITCH %5.2f YAW %5.2f   H %5.2f\n",setpoint.roll,setpoint.pitch, setpoint.yaw,setpoint.h);
+    printf("ATT ROLL %5.2f PITCH %5.2f YAW %5.2f   H %5.2f\n",att.roll,att.pitch, att.yaw,att.h);
+    printf("ADJ ROLL %5.2f PITCH %5.2f YAW %5.2f THR %5.2f\n",adj_roll,adj_pitch, adj_yaw,throttle);
     
     //convert pid adjustments to motor values
     motor[0] = throttle +adj_roll -adj_pitch +adj_yaw;
@@ -195,16 +200,16 @@ void navLog_Send()
     ,logcnt
     ,att.ts   // navdata timestamp in sec
     //sensor data
-    ,att.ax   // acceleration x-axis in [G] front facing up is positive         
-    ,att.ay   // acceleration y-axis in [G] left facing up is positive                
-    ,att.az   // acceleration z-axis in [G] top facing up is positive             
+    ,att.ax   // acceleration x-axis in [m/s^2] front facing up is positive         
+    ,att.ay   // acceleration y-axis in [m/s^2] left facing up is positive                
+    ,att.az   // acceleration z-axis in [m/s^2] top facing up is positive             
     ,RAD2DEG(att.gx)   // gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive           
     ,RAD2DEG(att.gy)   // gyro value y-axis in [deg/sec] right turn, i.e. pirch down is positive                     
     ,RAD2DEG(att.gz)   // gyro value z-axis in [deg/sec] right turn, i.e. yaw left is positive 
     ,att.hv   // vertical speed [cm/sec]
     //height
     ,setpoint.h  // setpoint height
-    ,att.h       // actual height above ground in [cm] 
+    ,att.h       // actual height above ground in [m] 
     ,throttle    // throttle setting 0.00 - 1.00
     //pitch
     ,RAD2DEG(setpoint.pitch)  //setpoint pitch [deg]

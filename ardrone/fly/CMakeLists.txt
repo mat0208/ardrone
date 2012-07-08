@@ -6,8 +6,8 @@ SET( CMAKE_C_FLAGS "-std=c99")
 link_libraries(m)
 link_libraries(pthread)
 
-add_executable(fly
-	main_fly.c
+
+SET( FLY_SOURCES 	main_fly.c
 	controlthread.c
 	pid.c
 	../navboard/navboard.c
@@ -19,6 +19,16 @@ add_executable(fly
 	../attitude/attitude.c
 	../attitude/ars.c
 )
+
+add_executable(fly
+	${FLY_SOURCES}
+)
+
+add_executable(nofly
+	${FLY_SOURCES}
+)
+SET_TARGET_PROPERTIES (nofly PROPERTIES COMPILE_FLAGS "-DMOTOR_DRY_RUN")
+
 
 	
 

@@ -25,10 +25,12 @@
 extern "C" {
 #endif
 
+#define PI 3.1415926
+
 //degrees to radians
-#define DEG2RAD(x) ((x)*3.1415926/180)
+#define DEG2RAD(x) ((x)*PI/180.0)
 //radians to degrees
-#define RAD2DEG(x) ((x)/3.1415926*180)
+#define RAD2DEG(x) ((x)/PI*180.0)
 
 //non blocking getchar
 int util_getch(void);
