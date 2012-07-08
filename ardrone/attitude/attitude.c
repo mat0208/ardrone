@@ -91,7 +91,7 @@ float pitch(float a_z, float a_x)
 
 void att_Print(struct att_struct *att)
 {
-	printf("roll=%5.1f,a=%5.1f,g=%5.1f pitch=%5.1f,a=%5.1f,g=%5.1f yaw=%5.1f h=%5.1f dt=%4.1f\n"
+	printf("roll=%5.1f,a=%5.1f,g=%5.1f pitch=%5.1f,a=%5.1f,g=%5.1f yaw=%5.1f h=%5.3f dt=%4.1f\n"
 		,RAD2DEG(att->roll),  RAD2DEG(att->roll_a),  RAD2DEG(att->roll_g)
 		,RAD2DEG(att->pitch), RAD2DEG(att->pitch_a), RAD2DEG(att->pitch_g)
 		,RAD2DEG(att->yaw)
