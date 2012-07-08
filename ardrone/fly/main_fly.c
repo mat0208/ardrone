@@ -46,7 +46,7 @@ int main()
   //wait for udp packet on port 7777
   struct udp_struct udpCmd;
   udpServer_Init(&udpCmd,7777,1/*blocking*/);
-  char buf[1024];
+  char buf[1025];
   printf("Waiting for UDP wakeup on port 7777\n");
   int bufcnt=udpServer_Receive(&udpCmd, buf, 1024);
   if(bufcnt<=0) return 1;
@@ -66,6 +66,7 @@ int main()
     //wait for next packet on cmd port
     bufcnt=udpServer_Receive(&udpCmd, buf, 1024);
     if(bufcnt<=0) continue;
+    printf("Received a packet of %d bytes\n",bufcnt);
     buf[bufcnt]=0;
     
     //split tokens
@@ -73,6 +74,7 @@ int main()
     char delims[] = ",";
     char *result = NULL;
     result = strtok( buf, delims );
+    printf("Command toked is %s\n",result);
     if(strcmp(result,"s")) continue;
     result = strtok( NULL, delims );
     float val[4];
@@ -85,6 +87,8 @@ int main()
     if(i==4) {
       printf("set:%f,%f,%f,%f\n", val[0],val[1],val[2],val[3] );
       ctl_SetSetpoint(val[0],val[1],val[2],val[3]);
+    } else {
+      printf("Unable to parse: %s\n",buf);
     }
 
   }
