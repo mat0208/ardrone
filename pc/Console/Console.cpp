@@ -58,9 +58,10 @@ int main(int argc, char **argv) {
         }
     };
     scoped_input_flags flags; // make sure echo is on after program ends
-    const double takeoff_height = 75.0;
+    const double takeoff_height = 0.75;
     const double pitch_roll_step = 1.0;
-    const double yaw_heights_step = 5.0;
+    const double yaw_step = 5.0;
+    const double height_step = 0.05;
     Drone drone(argc > 1 ? argv[1] : "192.168.1.1");
     show_control_tips();
     bool run = true;
@@ -92,19 +93,19 @@ int main(int argc, char **argv) {
             drone.SendCmd();
             break;
           case 'k':
-            drone.H(drone.H() - yaw_heights_step);
+            drone.H(drone.H() - height_step);
             drone.SendCmd();
             break;
           case 'i':
-            drone.H(drone.H() + yaw_heights_step);
+            drone.H(drone.H() + height_step);
             drone.SendCmd();
             break;
           case 'j':
-            drone.Yaw(drone.Yaw() + DEG2RAD(yaw_heights_step));
+            drone.Yaw(drone.Yaw() + DEG2RAD(yaw_step));
             drone.SendCmd();
             break;
           case 'l':
-            drone.Yaw(drone.Yaw() - DEG2RAD(yaw_heights_step));
+            drone.Yaw(drone.Yaw() - DEG2RAD(yaw_step));
             drone.SendCmd();
           case 'q':
             run = false; //fallthrough
