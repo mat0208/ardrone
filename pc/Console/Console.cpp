@@ -1,113 +1,129 @@
 #include <iostream>
 #include <cstdio>
-#include "Drone.hpp"
 #include <termios.h>
 #include <unistd.h>
+#include "Drone.hpp"
 
 using std::cin;
+using std::cout;
+using std::endl;
+using std::cerr;
 
 inline double DEG2RAD(double x)
 {
   return x * 3.1415926 / 180;
 }
+
 inline double RAD2DEG(double x)
 {
   return x / 3.1415926 * 180;
 }
 
 
-int
-set_canon(int flag)
+static void set_input_flags(bool flag)
 {
-        struct termios t;
-
-        tcgetattr( fileno(stdin), &t);
-        if( flag)
-                t.c_lflag |= ICANON;
-        else
-                t.c_lflag &= ~ICANON;
-        tcsetattr( fileno(stdin), TCSANOW, &t); 
-
-        return( 1);
+  struct termios t;
+  tcgetattr(fileno(stdin), &t);
+  if (flag)
+    t.c_lflag |= ICANON|ECHO;
+  else
+    t.c_lflag &= ~(ICANON|ECHO);
+  tcsetattr(fileno(stdin), TCSANOW, &t);
 }
 
+static void show_control_tips()
+{
+  cout	<< "Controls: 	                                        " << endl
+        << "Space = Land/Init, Enter = Takeoff        		" << endl
+        << "  W  =       Forward                                " << endl
+        << " SAD =  Left/Backward/Right                       	" << endl
+        << "  I  =              Up                              " << endl
+        << " JKL =  Rotate Left/Down/Rotate Right             	" << endl
+        << " Q = Land and Quit					" << endl
+        << " N = Neutral (stop WSAD movement)		        " << endl
+        << endl;
+}
 
 int main(int argc, char **argv) {
-  set_canon(0);
-  Drone drone(argc > 1 ? argv[1] : "192.168.1.1");
-  const double pitch_roll_step = 1.0;
-  const double yaw_step = 5.0;
-  bool run = true;
-  while(run) {
-    char c;
-    if (cin.read(&c, 1)) {
-      c = tolower(c);
-      switch(c) {	
-        //K Neutral
-        case 'k': 
-          drone.Pitch(0.0);
-          drone.Roll(0.0);
-          drone.SendCmd();
-          break;
-        //I Fly forward
-        case 'i':
+  try {
+    class scoped_input_flags {
+      public:
+        scoped_input_flags()
+        {
+          set_input_flags(false);
+        }
+        ~scoped_input_flags()
+        {
+          set_input_flags(true);
+        }
+    };
+    scoped_input_flags flags; // make sure echo is on after program ends
+    const double takeoff_height = 75.0;
+    const double pitch_roll_step = 1.0;
+    const double yaw_heights_step = 5.0;
+    Drone drone(argc > 1 ? argv[1] : "192.168.1.1");
+    show_control_tips();
+    bool run = true;
+    while(run) {
+      char c;
+      if (cin.read(&c, 1)) {
+        cout << "                                                   \r";
+        c = tolower(c);
+        switch(c) {
+          case 'n':
+            drone.Pitch(0.0);
+            drone.Roll(0.0);
+            drone.SendCmd();
+            break;
+          case 'w':
             drone.Pitch(drone.Pitch() + DEG2RAD(pitch_roll_step));
             drone.SendCmd();
             break;
-        //, Fly backward
-        case ',':
-            drone.Pitch(drone.Pitch()-DEG2RAD(pitch_roll_step));
+          case 's':
+            drone.Pitch(drone.Pitch() - DEG2RAD(pitch_roll_step));
             drone.SendCmd();
             break;
-        //J Fly leftward
-        case 'j':
-            drone.Roll(drone.Roll() -DEG2RAD(pitch_roll_step));
+          case 'a':
+            drone.Roll(drone.Roll() - DEG2RAD(pitch_roll_step));
             drone.SendCmd();
             break;
-        //L Fly rightward
-        case 'l':
+          case 'd':
             drone.Roll(drone.Roll() + DEG2RAD(pitch_roll_step));
             drone.SendCmd();
             break;
-        //S Throttle down
-        case 's':
-            drone.H(drone.H() - 5);
+          case 'k':
+            drone.H(drone.H() - yaw_heights_step);
             drone.SendCmd();
             break;
-        //W Throttle up
-        case 'w':
-            drone.H(drone.H() + 5);
+          case 'i':
+            drone.H(drone.H() + yaw_heights_step);
             drone.SendCmd();
             break;
-        //A Rotate anticlockwise
-        case 'a':
-            drone.Yaw(drone.Yaw() + DEG2RAD(yaw_step));
+          case 'j':
+            drone.Yaw(drone.Yaw() + DEG2RAD(yaw_heights_step));
             drone.SendCmd();
             break;
-        //D Rotate clockwise
-        case 'd':
-            drone.Yaw(drone.Yaw()- DEG2RAD(yaw_step));
+          case 'l':
+            drone.Yaw(drone.Yaw() - DEG2RAD(yaw_heights_step));
             drone.SendCmd();
-         //Q Quit
-        case 'q': 
-          run = false;
-        //Space Land
-        case ' ':
-            drone.Pitch(0.0);
-            drone.Roll(0.0);
-            drone.H(0.0);
-            drone.SendCmd();
+          case 'q':
+            run = false; //fallthrough
+          case ' ':
+            drone.Land();
             break;
-        //Return takeoff
-        case '\n':
-            drone.Pitch(0.0);
-            drone.Roll(0.0);
-            drone.H(75.0);
-            drone.SendCmd();
+          case '\n':
+            drone.TakeOff(takeoff_height);
             break;
-
+          default:
+            cout << "Unknown key: '"<< c << "'                \r";
+            break;
+        }
       }
     }
+  }
+  catch(const std::exception& e) {
+    cerr << "exception: " << e.what() << endl;
+    return 1;
   }
   return 0;
 }

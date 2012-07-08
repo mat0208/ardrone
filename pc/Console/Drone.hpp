@@ -55,13 +55,28 @@ class Drone
     void H(double h) {
         safeSet(H_, h, 0.0, 600.0);
     }
+
     double H() {
         return H_;
     }
 
+    void Land() {
+        Pitch(0.0);
+        Roll(0.0);
+        H(0.0);
+        SendCmd();
+    }
+
+    void TakeOff(double height)
+    {
+        Pitch(0.0);
+        Roll(0.0);
+        H(height);
+        SendCmd();
+    }
+    
     void SendCmd()
     {
-        string sendData = boost::str(boost::format("s,%1%,%2%,%3%,%4%") % Pitch_ % Roll_ % Yaw_ % H_);
-        socket_.send(boost::asio::buffer(sendData));
+        socket_.send(boost::asio::buffer(boost::str(boost::format("s,%1%,%2%,%3%,%4%") % Pitch_ % Roll_ % Yaw_ % H_)));
     }
 };
