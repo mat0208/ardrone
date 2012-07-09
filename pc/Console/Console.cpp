@@ -1,7 +1,5 @@
 #include <iostream>
 #include <cstdio>
-#include <termios.h>
-#include <unistd.h>
 #include <signal.h>
 #include <boost/version.hpp>
 #include <boost/bind.hpp>
@@ -9,6 +7,7 @@
 #include <memory>
 #include "Drone.hpp"
 #include "Joystick.hpp"
+#include "Keyboard.hpp"
 #include "UdpLogger.hpp"
 
 #if (BOOST_VERSION < 104700)
@@ -31,18 +30,6 @@ inline double RAD2DEG(double x)
   return x / 3.1415926 * 180;
 }
 
-
-static void set_input_flags(bool flag)
-{
-  struct termios t;
-  tcgetattr(fileno(stdin), &t);
-  if (flag)
-    t.c_lflag |= ICANON|ECHO;
-  else
-    t.c_lflag &= ~(ICANON|ECHO);
-  tcsetattr(fileno(stdin), TCSANOW, &t);
-}
-
 static void show_control_tips()
 {
   cout	<< "Controls: 	                                        " << endl
@@ -58,82 +45,99 @@ static void show_control_tips()
 
 const double takeoff_height = 0.75;
 
-void runKeyboardControlled(Drone& drone)
-{
-  class scoped_input_flags {
-    public:
-      scoped_input_flags()
-      {
-        set_input_flags(false);
-      }
-      ~scoped_input_flags()
-      {
-        set_input_flags(true);
-      }
-  };
-  scoped_input_flags flags; // make sure echo is on after program ends
-  const double pitch_roll_step = 1.0;
-  const double yaw_step = 5.0;
-  const double height_step = 0.05;
-  show_control_tips();
-  bool run = true;
-  while(run) {
-    char c;
-    drone.io_service().poll();
-    if (cin.read(&c, 1)) {
-      cout << "                                                   \r";
-      c = tolower(c);
-      switch(c) {
-        case 'n':
-          drone.Pitch(0.0);
-          drone.Roll(0.0);
-          drone.SendCmd();
-          break;
-        case 'w':
-          drone.Pitch(drone.Pitch() + DEG2RAD(pitch_roll_step));
-          drone.SendCmd();
-          break;
-        case 's':
-          drone.Pitch(drone.Pitch() - DEG2RAD(pitch_roll_step));
-          drone.SendCmd();
-          break;
-        case 'a':
-          drone.Roll(drone.Roll() - DEG2RAD(pitch_roll_step));
-          drone.SendCmd();
-          break;
-        case 'd':
-          drone.Roll(drone.Roll() + DEG2RAD(pitch_roll_step));
-          drone.SendCmd();
-          break;
-        case 'k':
-          drone.H(drone.H() - height_step);
-          drone.SendCmd();
-          break;
-        case 'i':
-          drone.H(drone.H() + height_step);
-          drone.SendCmd();
-          break;
-        case 'j':
-          drone.Yaw(drone.Yaw() + DEG2RAD(yaw_step));
-          drone.SendCmd();
-          break;
-        case 'l':
-          drone.Yaw(drone.Yaw() - DEG2RAD(yaw_step));
-          drone.SendCmd();
-        case 'q':
-          run = false; //fallthrough
-        case ' ':
-          drone.Land();
-          break;
-        case '\n':
-          drone.TakeOff(takeoff_height);
-          break;
-        default:
-          cout << "Unknown key: '"<< c << "'                \r";
-          break;
-      }
+class KeybaordDroneHandler {
+  Drone& drone_;
+  Keyboard& keyboard_;
+public:
+  KeybaordDroneHandler(Drone& drone, Keyboard& keyboard) : drone_(drone), keyboard_(keyboard) 
+  {
+    keyboard_.setKeyHandler(boost::bind(&KeybaordDroneHandler::handleKey, this, _1));
+  }
+
+  ~KeybaordDroneHandler() {
+  }
+
+  void handleKey(char key) {
+    const double pitch_roll_step = 1.0;
+    const double yaw_step = 5.0;
+    const double height_step = 0.05;
+    switch(key) {
+      case 'n':
+        drone_.Pitch(0.0);
+        drone_.Roll(0.0);
+        drone_.SendCmd();
+        break;
+      case 'w':
+        drone_.Pitch(drone_.Pitch() + DEG2RAD(pitch_roll_step));
+        drone_.SendCmd();
+        break;
+      case 's':
+        drone_.Pitch(drone_.Pitch() - DEG2RAD(pitch_roll_step));
+        drone_.SendCmd();
+        break;
+      case 'a':
+        drone_.Roll(drone_.Roll() - DEG2RAD(pitch_roll_step));
+        drone_.SendCmd();
+        break;
+      case 'd':
+        drone_.Roll(drone_.Roll() + DEG2RAD(pitch_roll_step));
+        drone_.SendCmd();
+        break;
+      case 'k':
+        drone_.H(drone_.H() - height_step);
+        drone_.SendCmd();
+        break;
+      case 'i':
+        drone_.H(drone_.H() + height_step);
+        drone_.SendCmd();
+        break;
+      case 'j':
+        drone_.Yaw(drone_.Yaw() + DEG2RAD(yaw_step));
+        drone_.SendCmd();
+        break;
+      case 'l':
+        drone_.Yaw(drone_.Yaw() - DEG2RAD(yaw_step));
+        drone_.SendCmd();
+      case 'q':
+        stop();
+        break;
+      case ' ':
+        drone_.Land();
+        break;
+      case '\n':
+        drone_.TakeOff(takeoff_height);
+        break;
+      case '?':
+        show_control_tips();
+        break;
+      default:
+        cerr << "Unknown key: '"<< key << "'                \r";
+        break;
     }
   }
+
+  void stop() 
+  {
+    drone_.Land();
+    keyboard_.stop();
+    drone_.io_service().stop();
+  }
+};
+
+void runKeyboardControlled(Drone& drone)
+{
+  show_control_tips();
+  Keyboard keyboard(drone.io_service());
+  boost::asio::signal_set signals(drone.io_service());
+  signals.add(SIGINT);
+  signals.add(SIGTERM);
+#ifdef SIGQUIT
+  signals.add(SIGQUIT);
+#endif
+  KeybaordDroneHandler handler(drone, keyboard);
+  keyboard.start();
+  signals.async_wait(boost::bind(&KeybaordDroneHandler::stop, &handler));
+  drone.io_service().run();
 }
 
 class JoystickDroneHandler {

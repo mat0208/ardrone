@@ -9,7 +9,5 @@ link_libraries(boost_program_options)
 add_executable(Console
 	Console.cpp
 	Joystick.cpp
+	Keyboard.cpp
 )
-
-	
-
