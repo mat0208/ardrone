@@ -262,10 +262,7 @@ void *ctl_thread_main(void* data) {
 		else if ((cnt % 200) == 100)
 			mot_SetLeds(0, 0, 0, 0);
 
-//		if (cnt % 20 == 0) {
-			//send UDP nav log packet    
-			navLog_Send();
-//		}
+		navLog_Send();
 
 		//yield to other threads
 		pthread_yield();
