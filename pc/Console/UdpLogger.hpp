@@ -3,8 +3,10 @@
 #include <boost/array.hpp>
 #include <iostream>
 #include <fstream>
+#include <string>
 using boost::uint16_t;
 using std::ofstream;
+using std::string;
 
 class UdpLogger {
   ofstream log_;
