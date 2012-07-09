@@ -6,8 +6,10 @@
 #include <boost/version.hpp>
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
+#include <memory>
 #include "Drone.hpp"
 #include "Joystick.hpp"
+#include "UdpLogger.hpp"
 
 #if (BOOST_VERSION < 104700)
 #error "Boost 1.47 or greater required (for boost::asio::signal_set support: sudo apt-get install libboost1.48-dev)"
@@ -77,6 +79,7 @@ void runKeyboardControlled(Drone& drone)
   bool run = true;
   while(run) {
     char c;
+    drone.io_service().poll();
     if (cin.read(&c, 1)) {
       cout << "                                                   \r";
       c = tolower(c);
@@ -213,6 +216,7 @@ public:
     cerr << "landing drone and stopping joy :-(" << endl;
     drone_.Land();
     joystick_.stop();
+    drone_.io_service().stop();
   }
 };
 
@@ -233,7 +237,15 @@ void runJoystickControlled(Drone& drone, const string& joystickDevice)
 
 void runConsole(const bpo::variables_map& vm)
 {
-  boost::asio::io_service srv;  Drone drone(vm["address"].as<string>(), srv);
+  boost::asio::io_service srv;
+  Drone drone(vm["address"].as<string>(), srv);
+  std::auto_ptr<UdpLogger> logger;
+
+  if (vm.count("logfile")) {
+    logger.reset(new UdpLogger(srv, 7778, vm["logfile"].as<string>()));
+    logger->start();
+  }
+
   if (vm.count("joystick")) {
     runJoystickControlled(drone, vm["joystick"].as<string>());
   } else {
@@ -253,6 +265,7 @@ int main(int argc, char **argv) {
       ("help,h", "print this help message")
       ("address", bpo::value<string>()->default_value("192.168.1.1"), "address of the drone")
       ("joystick", bpo::value<string>(), "use joystick with arg as device name")
+      ("logfile", bpo::value<string>(), "enable logging of the csv data to arg sent by the drone");
     ;
     bpo::options_description command_line_options;
     command_line_options.add(options);
