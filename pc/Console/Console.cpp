@@ -2,12 +2,14 @@
 #include <cstdio>
 #include <termios.h>
 #include <unistd.h>
+#include <boost/program_options.hpp>
 #include "Drone.hpp"
 
 using std::cin;
 using std::cout;
 using std::endl;
 using std::cerr;
+namespace bpo = boost::program_options;
 
 inline double DEG2RAD(double x)
 {
@@ -44,83 +46,109 @@ static void show_control_tips()
         << endl;
 }
 
-int main(int argc, char **argv) {
-  try {
-    class scoped_input_flags {
-      public:
-        scoped_input_flags()
-        {
-          set_input_flags(false);
-        }
-        ~scoped_input_flags()
-        {
-          set_input_flags(true);
-        }
-    };
-    scoped_input_flags flags; // make sure echo is on after program ends
-    const double takeoff_height = 0.75;
-    const double pitch_roll_step = 1.0;
-    const double yaw_step = 5.0;
-    const double height_step = 0.05;
-    Drone drone(argc > 1 ? argv[1] : "192.168.1.1");
-    show_control_tips();
-    bool run = true;
-    while(run) {
-      char c;
-      if (cin.read(&c, 1)) {
-        cout << "                                                   \r";
-        c = tolower(c);
-        switch(c) {
-          case 'n':
-            drone.Pitch(0.0);
-            drone.Roll(0.0);
-            drone.SendCmd();
-            break;
-          case 'w':
-            drone.Pitch(drone.Pitch() + DEG2RAD(pitch_roll_step));
-            drone.SendCmd();
-            break;
-          case 's':
-            drone.Pitch(drone.Pitch() - DEG2RAD(pitch_roll_step));
-            drone.SendCmd();
-            break;
-          case 'a':
-            drone.Roll(drone.Roll() - DEG2RAD(pitch_roll_step));
-            drone.SendCmd();
-            break;
-          case 'd':
-            drone.Roll(drone.Roll() + DEG2RAD(pitch_roll_step));
-            drone.SendCmd();
-            break;
-          case 'k':
-            drone.H(drone.H() - height_step);
-            drone.SendCmd();
-            break;
-          case 'i':
-            drone.H(drone.H() + height_step);
-            drone.SendCmd();
-            break;
-          case 'j':
-            drone.Yaw(drone.Yaw() + DEG2RAD(yaw_step));
-            drone.SendCmd();
-            break;
-          case 'l':
-            drone.Yaw(drone.Yaw() - DEG2RAD(yaw_step));
-            drone.SendCmd();
-          case 'q':
-            run = false; //fallthrough
-          case ' ':
-            drone.Land();
-            break;
-          case '\n':
-            drone.TakeOff(takeoff_height);
-            break;
-          default:
-            cout << "Unknown key: '"<< c << "'                \r";
-            break;
-        }
+void runConsole(const bpo::variables_map& vm)
+{
+  class scoped_input_flags {
+    public:
+      scoped_input_flags()
+      {
+        set_input_flags(false);
+      }
+      ~scoped_input_flags()
+      {
+        set_input_flags(true);
+      }
+  };
+  scoped_input_flags flags; // make sure echo is on after program ends
+  const double takeoff_height = 0.75;
+  const double pitch_roll_step = 1.0;
+  const double yaw_step = 5.0;
+  const double height_step = 0.05;
+  boost::asio::io_service srv;
+  Drone drone(vm["address"].as<string>(), srv);
+  show_control_tips();
+  bool run = true;
+  while(run) {
+    char c;
+    if (cin.read(&c, 1)) {
+      cout << "                                                   \r";
+      c = tolower(c);
+      switch(c) {
+        case 'n':
+          drone.Pitch(0.0);
+          drone.Roll(0.0);
+          drone.SendCmd();
+          break;
+        case 'w':
+          drone.Pitch(drone.Pitch() + DEG2RAD(pitch_roll_step));
+          drone.SendCmd();
+          break;
+        case 's':
+          drone.Pitch(drone.Pitch() - DEG2RAD(pitch_roll_step));
+          drone.SendCmd();
+          break;
+        case 'a':
+          drone.Roll(drone.Roll() - DEG2RAD(pitch_roll_step));
+          drone.SendCmd();
+          break;
+        case 'd':
+          drone.Roll(drone.Roll() + DEG2RAD(pitch_roll_step));
+          drone.SendCmd();
+          break;
+        case 'k':
+          drone.H(drone.H() - height_step);
+          drone.SendCmd();
+          break;
+        case 'i':
+          drone.H(drone.H() + height_step);
+          drone.SendCmd();
+          break;
+        case 'j':
+          drone.Yaw(drone.Yaw() + DEG2RAD(yaw_step));
+          drone.SendCmd();
+          break;
+        case 'l':
+          drone.Yaw(drone.Yaw() - DEG2RAD(yaw_step));
+          drone.SendCmd();
+        case 'q':
+          run = false; //fallthrough
+        case ' ':
+          drone.Land();
+          break;
+        case '\n':
+          drone.TakeOff(takeoff_height);
+          break;
+        default:
+          cout << "Unknown key: '"<< c << "'                \r";
+          break;
       }
     }
+  }
+}
+
+void printUsage(const string& program, const bpo::options_description& options)
+{
+  std::cerr << program << " [options] " << std::endl << options << std::endl;
+}
+
+int main(int argc, char **argv) {
+  try {
+    bpo::options_description options("Options");
+    options.add_options()
+      ("help,h", "print this help message")
+      ("address", bpo::value<string>()->default_value("192.168.1.1"), "address of the drone")
+      ("joystick", bpo::value<string>(), "use joystick with arg as device name")
+    ;
+    bpo::options_description command_line_options;
+    command_line_options.add(options);
+    bpo::variables_map vm;
+    bpo::store(bpo::command_line_parser(argc, argv).options(command_line_options).run(), vm);
+    bpo::notify(vm);
+    if (vm.count("help")) {
+      printUsage(argv[0], options);
+      return 0;
+    }
+    runConsole(vm);
   }
   catch(const std::exception& e) {
     cerr << "exception: " << e.what() << endl;

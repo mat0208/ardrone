@@ -9,12 +9,12 @@ class Drone
     double Roll_;
     double Yaw_;
     double H_;
-    boost::asio::io_service ios_;
+    boost::asio::io_service& ios_;
     boost::asio::ip::udp::endpoint remote_;
     boost::asio::ip::udp::socket socket_;
 
  public:
-    Drone(const std::string& address) : Pitch_(0.0), Roll_(0.0), Yaw_(0.0), H_(0.0), ios_(), 
+    Drone(const std::string& address, boost::asio::io_service& ios) : Pitch_(0.0), Roll_(0.0), Yaw_(0.0), H_(0.0), ios_(ios), 
         remote_(boost::asio::ip::address::from_string(address), 7777) ,
         socket_(ios_)
     {
