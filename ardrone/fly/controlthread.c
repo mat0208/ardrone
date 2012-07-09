@@ -51,8 +51,15 @@ struct pid_struct pid_h;
 
 float throttle;
 
+#define MOTOR_TAKEOF_THROTTLE 0.55
+/** ramp progress while launching*/
+#define LAUNCHRAMP_LENGTH 800 // 200 ^= 1 second
+int launchRamp;
+
+
 struct att_struct att;
 
+/** @todo split this structure in setpoints and limits */
 struct setpoint_struct {
 	float pitch; //radians  
 	float roll; //radians     
@@ -66,6 +73,41 @@ struct setpoint_struct {
 	float throttle_max; //max throttle (while flying)
 } setpoint;
 
+struct setpoint_struct setpoint_landing={0,0,0,0.2, 0,0,0,0,0.5,0.85};
+
+
+enum FlyState {
+	Landed=1,
+	Launching=10,
+	Flying=11,
+	Landing=12,
+	Error=20
+} flyState;
+
+const char *stateName(enum FlyState state)
+{
+	switch(state) {
+	  case Landed: return "Landed"; break;
+	  case Launching: return "Launching"; break;
+	  case Flying: return "Flying"; break;
+	  case Landing: return "Landing"; break;
+	  case Error: return "Error"; break;
+	  default: return "Unknown"; break;
+	}
+}
+
+
+
+
+void switchState(enum FlyState newState)
+{
+  printf("Switching state to %d: %s\n",newState, stateName(newState));
+  flyState=newState;
+  
+  if(newState==Launching) launchRamp=0;
+}
+
+
 struct udp_struct udpNavLog;
 int logcnt = 0;
 void navLog_Send();
@@ -73,7 +115,7 @@ void *ctl_thread_main(void* data);
 
 int ctl_Init(char *client_addr) {
 	int rc;
-
+ 
 	//defaults from AR.Drone app:  pitch,roll max=12deg; yawspeed max=100deg/sec; height limit=on; vertical speed max=700mm/sec; 
 	setpoint.pitch_roll_max = DEG2RAD(12); //degrees     
 	//setpoint.yawsp_max=DEG2RAD(100); //degrees/sec
@@ -117,9 +159,35 @@ int ctl_Init(char *client_addr) {
 	}
 }
 
+void calculateMotorSpeedsFlying(float motor[4], struct setpoint_struct setpoint)
+{
+	//flying, calc pid controller corrections
+	adj_roll = pid_CalcD(&pid_roll, setpoint.roll - att.roll, att.dt,
+			att.gx); //err positive = need to roll right
+	adj_pitch = pid_CalcD(&pid_pitch, setpoint.pitch - att.pitch,
+			att.dt, att.gy); //err positive = need to pitch down
+	adj_yaw = pid_CalcD(&pid_yaw, setpoint.yaw - att.yaw, att.dt,
+			att.gz); //err positive = need to increase yaw to the left
+	adj_h = pid_CalcD(&pid_h, setpoint.h - att.h, att.dt, att.hv); //err positive = need to increase height
+
+	throttle = setpoint.throttle_hover + adj_h;
+	if (throttle < setpoint.throttle_min)
+		throttle = setpoint.throttle_min;
+	if (throttle > setpoint.throttle_max)
+		throttle = setpoint.throttle_max;
+
+	//convert pid adjustments to motor values
+	motor[0] = throttle + adj_roll - adj_pitch + adj_yaw;
+	motor[1] = throttle - adj_roll - adj_pitch - adj_yaw;
+	motor[2] = throttle - adj_roll + adj_pitch + adj_yaw;
+	motor[3] = throttle + adj_roll + adj_pitch - adj_yaw;
+
+}
+
 void *ctl_thread_main(void* data) {
 	int cnt;
 	int rc;
+	switchState(Landed);
 
 	while (1) {
 		rc = att_GetSample(&att);
@@ -140,41 +208,49 @@ void *ctl_thread_main(void* data) {
 		}
 
 		float motor[4];
-		if (setpoint.h == 0.00) {
-			//motors off
-			adj_roll = 0;
-			adj_pitch = 0;
-			adj_h = 0;
-			adj_yaw = 0;
-			throttle = 0;
-		} else {
-			//flying, calc pid controller corrections
-			adj_roll = pid_CalcD(&pid_roll, setpoint.roll - att.roll, att.dt,
-					att.gx); //err positive = need to roll right
-			adj_pitch = pid_CalcD(&pid_pitch, setpoint.pitch - att.pitch,
-					att.dt, att.gy); //err positive = need to pitch down
-			adj_yaw = pid_CalcD(&pid_yaw, setpoint.yaw - att.yaw, att.dt,
-					att.gz); //err positive = need to increase yaw to the left
-			adj_h = pid_CalcD(&pid_h, setpoint.h - att.h, att.dt, att.hv); //err positive = need to increase height
-
-			throttle = setpoint.throttle_hover + adj_h;
-			if (throttle < setpoint.throttle_min)
-				throttle = setpoint.throttle_min;
-			if (throttle > setpoint.throttle_max)
-				throttle = setpoint.throttle_max;
+		
+		switch(flyState) {
+		  case Landed:
+		    for(int i=0;i<4;i++) motor[i]=0;
+		    if(setpoint.h>0) switchState(Launching);
+		  break;
+		  case Launching:
+		    launchRamp++;
+		    for(int i=0;i<4;i++) motor[i]=launchRamp*MOTOR_TAKEOF_THROTTLE/LAUNCHRAMP_LENGTH;
+		    if (att.h > 0 || launchRamp > LAUNCHRAMP_LENGTH) {
+		    	switchState(Flying);
+		    }
+		  break;
+		  
+		  case Flying:
+		    calculateMotorSpeedsFlying(motor,setpoint);
+		    if (setpoint.h < 0.1) switchState(Landing);
+		  break;
+		  
+		  case Landing:
+		    if (att.h > 0.2) {
+		    	calculateMotorSpeedsFlying(motor,setpoint_landing);
+		    } else {
+		      switchState(Landed);
+	            }
+		  break;
+		  
+		  case Error:
+		    for(int i=0;i<4;i++) motor[i]=0;
+		    if(setpoint.h==0) switchState(Landed);
+		  break;
 		}
-		printf("SET ROLL %5.2f PITCH %5.2f YAW %5.2f   H %5.2f\n",
-				setpoint.roll, setpoint.pitch, setpoint.yaw, setpoint.h);
-		printf("ATT ROLL %5.2f PITCH %5.2f YAW %5.2f   H %5.2f\n", att.roll,
-				att.pitch, att.yaw, att.h);
-		printf("ADJ ROLL %5.2f PITCH %5.2f YAW %5.2f THR %5.2f\n", adj_roll,
-				adj_pitch, adj_yaw, throttle);
+		 
+		if ((cnt % 200) == 0) {
+			printf("SET ROLL %5.2f PITCH %5.2f YAW %5.2f   H %5.2f\n",
+					setpoint.roll, setpoint.pitch, setpoint.yaw, setpoint.h);
+			printf("ATT ROLL %5.2f PITCH %5.2f YAW %5.2f   H %5.2f\n", att.roll,
+					att.pitch, att.yaw, att.h);
+			printf("ADJ ROLL %5.2f PITCH %5.2f YAW %5.2f THR %5.2f\n", adj_roll,
+					adj_pitch, adj_yaw, throttle);
+		}
+	
 
-		//convert pid adjustments to motor values
-		motor[0] = throttle + adj_roll - adj_pitch + adj_yaw;
-		motor[1] = throttle - adj_roll - adj_pitch - adj_yaw;
-		motor[2] = throttle - adj_roll + adj_pitch + adj_yaw;
-		motor[3] = throttle + adj_roll + adj_pitch - adj_yaw;
 
 		//send to motors
 		mot_Run(motor[0], motor[1], motor[2], motor[3]);
@@ -186,8 +262,10 @@ void *ctl_thread_main(void* data) {
 		else if ((cnt % 200) == 100)
 			mot_SetLeds(0, 0, 0, 0);
 
-		//send UDP nav log packet    
-		navLog_Send();
+//		if (cnt % 20 == 0) {
+			//send UDP nav log packet    
+			navLog_Send();
+//		}
 
 		//yield to other threads
 		pthread_yield();
@@ -212,9 +290,9 @@ void navLog_Send() {
 			, att.ay // acceleration y-axis in [m/s^2] left facing up is positive                
 			, att.az // acceleration z-axis in [m/s^2] top facing up is positive             
 			, RAD2DEG(att.gx) // gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive           
-			, RAD2DEG(att.gy) // gyro value y-axis in [deg/sec] right turn, i.e. pirch down is positive                     
+			, RAD2DEG(att.gy) // gyro value y-axis in [deg/sec] right turn, i.e. pitch down is positive                     
 			, RAD2DEG(att.gz) // gyro value z-axis in [deg/sec] right turn, i.e. yaw left is positive 
-			, att.hv // vertical speed [cm/sec]
+			, att.hv // vertical speed [m/sec]
 			//height
 			, setpoint.h // setpoint height
 			, att.h // actual height above ground in [m] 
@@ -259,8 +337,6 @@ void ctl_SetSetpoint(float pitch, float roll, float yaw, float h) {
 		h = 0;
 	if (h > 0 && h < setpoint.h_min)
 		h = setpoint.h_min;
-	if (setpoint.h == 0 && h > 0)
-		throttle = 0.69; //takeoff
 	setpoint.h = h;
 }
 
