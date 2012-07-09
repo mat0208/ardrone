@@ -3,10 +3,15 @@
 #include <termios.h>
 #include <unistd.h>
 #include <signal.h>
+#include <boost/version.hpp>
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
 #include "Drone.hpp"
 #include "Joystick.hpp"
+
+#if (BOOST_VERSION < 104700)
+#error "Boost 1.47 or greater required (for boost::asio::signal_set support: sudo apt-get install libboost1.48-dev)"
+#endif
 
 using std::cin;
 using std::cout;
