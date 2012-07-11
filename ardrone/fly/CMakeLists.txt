@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 
 SET( CMAKE_C_COMPILER arm-none-linux-gnueabi-gcc )
-SET( CMAKE_C_FLAGS "-std=c99")
+SET( CMAKE_C_FLAGS "-std=c99 -Wall")
 
 link_libraries(m)
 link_libraries(pthread)
@@ -9,7 +9,9 @@ link_libraries(pthread)
 
 SET( FLY_SOURCES 	main_fly.c
 	controlthread.c
-	pid.c
+	control_strategies/pid_strategy.c
+	control_strategies/pid.c
+	controls.c
 	../navboard/navboard.c
 	../util/util.c
 	../gpio/gpio.c
@@ -18,6 +20,7 @@ SET( FLY_SOURCES 	main_fly.c
 	../udp/udp.c
 	../attitude/attitude.c
 	../attitude/ars.c
+
 )
 
 add_executable(fly

@@ -74,7 +74,7 @@ int main()
     char delims[] = ",";
     char *result = NULL;
     result = strtok( buf, delims );
-    printf("Command toked is %s\n",result);
+    printf("Command token is %s\n",result);
     if(strcmp(result,"s")) continue;
     result = strtok( NULL, delims );
     float val[4];
