@@ -1,6 +1,7 @@
 #include "pid.h"
 #include "../controls.h"
 #include "pid_strategy.h"
+#include <stdio.h>
 
 struct pid_struct pid_roll;
 struct pid_struct pid_pitch;
@@ -95,7 +96,21 @@ void pidStrategy_calculateMotorSpeeds(enum FlyState flyState, struct att_struct 
 		    launchRamp=0;
 		  break;
 		}
+}
 
+unsigned int pidStrategy_getStateForLog(char *buf,unsigned int maxLen)
+{
+  int len;
+  len= snprintf(buf,maxLen,
+        "%f,%f,%f,%f,"
+        ,adj_roll
+        ,adj_pitch
+        ,adj_yaw
+        ,adj_h
+      );
+  return len;      
 
 }
+
+
 

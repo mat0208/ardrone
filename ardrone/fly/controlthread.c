@@ -48,6 +48,7 @@ pthread_t ctl_thread;
 
 float motor[4];
 
+#define MAX_LOGBUFSIZE 1024
 
 struct att_struct att;
 
@@ -156,19 +157,19 @@ void *ctl_thread_main(void* data) {
 }
 
 //logging
-/** @todo: set messages from controller, too (e.g. adj_ from pid )*/
 void navLog_Send() {
-	char logbuf[1024];
+	char logbuf[MAX_LOGBUFSIZE];
 	int logbuflen;
 
 	float motval[4];
 	mot_GetMot(motval);
 
 	logcnt++;
-	logbuflen = sprintf(logbuf,
-			"%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f"
+	logbuflen = snprintf(logbuf,MAX_LOGBUFSIZE,
+			"%d,%f,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,"
 			//sequence+timestamp
 			, logcnt, att.ts // navdata timestamp in sec
+			, flyState
 			//sensor data
 			, att.ax // acceleration x-axis in [m/s^2] front facing up is positive         
 			, att.ay // acceleration y-axis in [m/s^2] left facing up is positive                
@@ -180,7 +181,7 @@ void navLog_Send() {
 			//height
 			, setpoint.h // setpoint height
 			, att.h // actual height above ground in [m] 
-			, (motor[0]+motor[1]+motor[2]+motor[3])/4 // throttle setting 0.00 - 1.00
+			, (motval[0]+motval[1]+motval[2]+motval[3])/4 // throttle setting 0.00 - 1.00
 			//pitch
 			, RAD2DEG(setpoint.pitch) //setpoint pitch [deg]
 			, RAD2DEG(att.pitch) //actual pitch   
@@ -190,11 +191,13 @@ void navLog_Send() {
 			//yaw
 			, RAD2DEG(setpoint.yaw) //yaw pitch [deg]
 			, RAD2DEG(att.yaw) //actual yaw  
-			, motor[0]
-			, motor[1]
-			, motor[2]
-			, motor[3]
+			, motval[0]
+			, motval[1]
+			, motval[2]
+			, motval[3]
 			);
+			
+	logbuflen+=pidStrategy_getStateForLog(logbuf+logbuflen,MAX_LOGBUFSIZE-logbuflen);
 	udpClient_Send(&udpNavLog, logbuf, logbuflen);
 }
 
