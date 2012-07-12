@@ -109,6 +109,22 @@ int main()
 		if(throttle4>0) throttle4 += step;
 		mot_Run(throttle1,throttle2,throttle3,throttle4);
 	}
+	if(c==';') {
+		printf("\rThrottle down * 60            ");
+		if(throttle1>step*60) throttle1 -= step*60;
+		if(throttle2>step*60) throttle2 -= step*60;
+		if(throttle3>step*60) throttle3 -= step*60;
+		if(throttle4>step*60) throttle4 -= step*60;
+		mot_Run(throttle1,throttle2,throttle3,throttle4);
+	}
+	if(c==':') {
+		printf("\rThrottle up *60            ");
+		if(throttle1>0) throttle1 += step*60;
+		if(throttle2>0) throttle2 += step*60;
+		if(throttle3>0) throttle3 += step*60;
+		if(throttle4>0) throttle4 += step*60;
+		mot_Run(throttle1,throttle2,throttle3,throttle4);
+	}
 	if(c==' ') {
 		printf("\rStop            ");
 		mot_Stop();
@@ -129,6 +145,10 @@ int main()
 		printf("\rLeds red            ");
 		mot_SetLeds(MOT_LEDRED,MOT_LEDRED,MOT_LEDRED,MOT_LEDRED);
 	}
+	
+	if(c!=-1) {
+  	  printf("Throttle: %f %f %f %f\n",throttle1, throttle2, throttle3,throttle4);
+  	}
 	
 	//yield to other threads
 	pthread_yield();
