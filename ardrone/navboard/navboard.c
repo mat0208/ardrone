@@ -46,7 +46,7 @@
 int nav_fd;
 
 float accs_offset[]                    = { 2048, 2048, 2048 };
-const float accs_gains[]               = { 512/9.81, 512/9.81, 512/9.81 }; // 512 units <-> 1 gee
+const float accs_gains[]               = { 512/GEE, 512/GEE, 512/GEE }; // 512 units <-> 1 gee
 float gyros_offset[]                   = { 0,0,0 };
 const float gyros_gains[]              = { GYRO_VAL_MAX_RADIANS_PER_SEC/GYRO_RAW_MAX,GYRO_VAL_MAX_RADIANS_PER_SEC/GYRO_RAW_MAX,GYRO_VAL_MAX_RADIANS_PER_SEC/GYRO_RAW_MAX }; 
 float mag_offset[]                     = { 0,0,0 };
@@ -219,7 +219,7 @@ int nav_FlatTrim()
 	//set offsets
 	accs_offset[0]=avg[0];
 	accs_offset[1]=avg[1];
-	accs_offset[2]=avg[2]-accs_gains[2]; //1 gee  
+	accs_offset[2]=avg[2]-accs_gains[2]*GEE; //1 gee  
 
 	printf("nav_Calibrate: accs_offset=%f,%f,%f\n",accs_offset[0],accs_offset[1],accs_offset[2]);
 
