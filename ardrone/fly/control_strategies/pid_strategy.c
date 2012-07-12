@@ -15,9 +15,13 @@ float adj_h;
 
 float throttle;
 
+
+// minum throttle for launching 
+#define MOTOR_INIT_THROTTLE 0.1
+// ramp end throttle
 #define MOTOR_TAKEOF_THROTTLE 0.55
 /** ramp progress while launching*/
-#define LAUNCHRAMP_LENGTH 800 // 200 ^= 1 second
+#define LAUNCHRAMP_LENGTH 600 // 200 ^= 1 second
 int launchRamp;
 
 struct setpoint_struct setpoint_landing={0,0,0,0.2, 0,0,0,0,0.5,0.85};
@@ -70,7 +74,9 @@ void pidStrategy_calculateMotorSpeeds(enum FlyState flyState, struct att_struct 
 		  break;
 		  case Launching:
 		    launchRamp++;
-		    for(int i=0;i<4;i++) motorOut[i]=launchRamp*MOTOR_TAKEOF_THROTTLE/LAUNCHRAMP_LENGTH;
+		    for(int i=0;i<4;i++) motorOut[i]=launchRamp*(MOTOR_TAKEOF_THROTTLE-MOTOR_INIT_THROTTLE)/LAUNCHRAMP_LENGTH+MOTOR_INIT_THROTTLE;
+		    
+		    
 		    if (att.h > 0 || launchRamp > LAUNCHRAMP_LENGTH) {
 		    	switchState(Flying);
 		    }
