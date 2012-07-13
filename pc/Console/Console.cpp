@@ -145,7 +145,7 @@ class JoystickDroneHandler {
     AxisRoll,
     AxisPitch,
     AxisYaw,
-    AxisHeight,
+    AxisHeigth,
   };
 
   enum ButtonIndex {
@@ -155,12 +155,38 @@ class JoystickDroneHandler {
     
   Drone& drone_;
   Joystick& joystick_;
-  static const unsigned joystick_dead_zone_percent = 20;
+  boost::asio::deadline_timer deadline_;
+  float heigthAdj_;
+  float yawAdj_;
+  static const unsigned joystick_dead_zone_percent =20;
+  static const float joystick_axis_maxval = 32767.0;
 public:
-  JoystickDroneHandler(Drone& drone, Joystick& joystick) : drone_(drone), joystick_(joystick)
+  JoystickDroneHandler(Drone& drone, Joystick& joystick)
+  : drone_(drone),
+    joystick_(joystick),
+    deadline_(drone.io_service()),
+    heigthAdj_(0.0),
+    yawAdj_(0.0)  
   {
     joystick.setButtonHandler(boost::bind(&JoystickDroneHandler::handleButton, this, _1, _2));
     joystick.setAxisHandler(boost::bind(&JoystickDroneHandler::handleAxis, this, _1, _2));
+    joystick.start();
+    deadline_.async_wait(boost::bind(&JoystickDroneHandler::checkDeadLine, this));
+    deadline_.expires_from_now(boost::posix_time::milliseconds(50));
+  }
+
+  void checkDeadLine()
+  {
+    if (deadline_.expires_at() <= boost::asio::deadline_timer::traits_type::now())
+    {
+      if (yawAdj_ != 0.0 | heigthAdj_ != 0.0) {
+        drone_.Yaw(drone_.Yaw() + yawAdj_);
+        drone_.H(drone_.H() + heigthAdj_);
+        drone_.SendCmd();
+      }
+      deadline_.expires_from_now(boost::posix_time::milliseconds(50));
+    }
+    deadline_.async_wait(boost::bind(&JoystickDroneHandler::checkDeadLine, this));
   }
 
   void handleButton(uint8_t button, bool down)
@@ -193,27 +219,28 @@ public:
         cout << "Yaw " << value << endl;
         Yaw(value);
         break;
-      case AxisHeight:
-        cout << "Height " << (value*(-1)) << endl;
-        Height(value*(-1));
+      case AxisHeigth:
+        cout << "Heigth " << (value*(-1)) << endl;
+        Heigth(value*(-1));
         break;
     }
+    drone_.SendCmd();
   }
   
   void Roll(int16_t value) {
-    //drone_.Roll();
+    drone_.Roll(deadZoneNormalize(value));
   }
   
   void Pitch(int16_t value) {
-    //drone_.Pitch();
+    drone_.Pitch(deadZoneNormalize(value));
   }
   
   void Yaw(int16_t value) {
-    //drone_.Yaw();
+    yawAdj_ = DEG2RAD(normalize(value)*5.0);
   }
   
-  void Height(int16_t value) {
-   //drone_.H();    
+  void Heigth(int16_t value) {
+    heigthAdj_ = normalize(value)*0.2;
   }
   
   void stop() {
@@ -222,7 +249,19 @@ public:
     joystick_.stop();
     drone_.io_service().stop();
   }
+  
+  static float deadZoneNormalize(int16_t value) {
+    float val = 0.0;
+    if ( ((value < 0) ? -1 * value : value * 100/32767) >= joystick_dead_zone_percent )
+      val = normalize(static_cast<float>(value));
+    return val;
+  }
+  static inline float normalize(float value)
+  {
+    return value/joystick_axis_maxval;
+  }
 };
+
 
 void runJoystickControlled(Drone& drone, const string& joystickDevice)
 {
@@ -234,7 +273,6 @@ void runJoystickControlled(Drone& drone, const string& joystickDevice)
   signals.add(SIGQUIT);
 #endif
   JoystickDroneHandler joyHandler(drone, js);
-  js.start();
   signals.async_wait(boost::bind(&JoystickDroneHandler::stop, &joyHandler));
   drone.io_service().run();
 }
