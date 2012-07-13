@@ -43,7 +43,7 @@ static void show_control_tips()
         << endl;
 }
 
-const double takeoff_height = 0.75;
+const double takeoff_height = 0.5;
 
 class KeybaordDroneHandler {
   Drone& drone_;
