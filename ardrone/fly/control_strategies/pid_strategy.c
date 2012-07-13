@@ -30,11 +30,11 @@ struct setpoint_struct setpoint_landing={0,0,0,0.2, 0,0,0,0,0.5,0.85};
 void pidStrategy_init()
 {
 	//init pid pitch/roll 
-	pid_Init(&pid_roll,  0.015,  0.000, 0.01, 0.1);
-	pid_Init(&pid_pitch, 0.015,  0.000, 0.01, 0.1);
+	pid_Init(&pid_roll,  0.5,  0.000, 0.00, 0.1);
+	pid_Init(&pid_pitch, 0.5,  0.000, 0.00, 0.1);
 
-	pid_Init(&pid_yaw, 1.00, 0, 0, 0);
-	pid_Init(&pid_h, 0.05, 0, 0, 0);
+	pid_Init(&pid_yaw, 0.1, 0, 0, 0);
+	pid_Init(&pid_h, 0.03, 0.01, 0, 0.1);
 	throttle = 0.00;
 
 
@@ -46,9 +46,9 @@ void pidStrategy_calculateMotorSpeedsFlying(struct att_struct att, struct setpoi
 	adj_roll = pid_CalcD(&pid_roll, setpoint.roll - att.roll, att.dt,
 			att.gx); //err positive = need to roll right
 	adj_pitch = pid_CalcD(&pid_pitch, setpoint.pitch - att.pitch,
-			att.dt, -att.gy); //err positive = need to pitch down
+			att.dt, att.gy); //err positive = need to pitch down
 	adj_yaw = pid_CalcD(&pid_yaw, setpoint.yaw - att.yaw, att.dt,
-			-att.gz); //err positive = need to increase yaw to the left
+			att.gz); //err positive = need to increase yaw to the left
 	adj_h = pid_CalcD(&pid_h, setpoint.h - att.h, att.dt, att.hv); //err positive = need to increase height
 
 	throttle = setpoint.throttle_hover + adj_h;
@@ -109,8 +109,8 @@ unsigned int pidStrategy_getStateForLog(char *buf,unsigned int maxLen)
   int len;
   len= snprintf(buf,maxLen,
         "%f,%f,%f,%f,"
-        ,adj_roll
         ,adj_pitch
+        ,adj_roll
         ,adj_yaw
         ,adj_h
       );
