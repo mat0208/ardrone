@@ -179,7 +179,7 @@ public:
   {
     if (deadline_.expires_at() <= boost::asio::deadline_timer::traits_type::now())
     {
-      if (yawAdj_ != 0.0 | heigthAdj_ != 0.0) {
+      if (yawAdj_ != 0.0 || heigthAdj_ != 0.0) {
         drone_.Yaw(drone_.Yaw() + yawAdj_);
         drone_.H(drone_.H() + heigthAdj_);
         drone_.SendCmd();
