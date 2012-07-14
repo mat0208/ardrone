@@ -96,7 +96,7 @@ int ctl_Init(char *client_addr) {
 
 
 void *ctl_thread_main(void* data) {
-	int cnt;
+	int cnt=0;
 	int rc;
 	switchState(Landed);
 
