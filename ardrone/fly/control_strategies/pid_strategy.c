@@ -24,8 +24,7 @@ float throttle;
 #define LAUNCHRAMP_LENGTH 600 // 200 ^= 1 second
 int launchRamp;
 
-struct setpoint_struct setpoint_landing={0,0,0,0.2, 0,0,0,0,0.5,0.85};
-
+struct setpoint_struct setpoint_landing={0,0,0,0.2};
 
 void pidStrategy_init()
 {
@@ -51,11 +50,11 @@ void pidStrategy_calculateMotorSpeedsFlying(struct att_struct att, struct setpoi
 			att.gz); //err positive = need to increase yaw to the left
 	adj_h = pid_CalcD(&pid_h, setpoint.h - att.h, att.dt, att.hv); //err positive = need to increase height
 
-	throttle = setpoint.throttle_hover + adj_h;
-	if (throttle < setpoint.throttle_min)
-		throttle = setpoint.throttle_min;
-	if (throttle > setpoint.throttle_max)
-		throttle = setpoint.throttle_max;
+	throttle = control_limits.throttle_hover + adj_h;
+	if (throttle < control_limits.throttle_min)
+		throttle = control_limits.throttle_min;
+	if (throttle > control_limits.throttle_max)
+		throttle = control_limits.throttle_max;
 
 	//convert pid adjustments to motor values
 	motorOut[0] = throttle + adj_roll - adj_pitch + adj_yaw;

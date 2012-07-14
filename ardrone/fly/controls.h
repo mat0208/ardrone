@@ -6,6 +6,10 @@ struct setpoint_struct {
 	float roll; //radians     
 	float yaw; //radians   
 	float h; //meters
+};
+
+
+struct control_limits_struct {
 	float pitch_roll_max; //radians     
 	float h_max; //m
 	float h_min; //m
@@ -28,6 +32,7 @@ const char *stateName(enum FlyState state);
 void switchState(enum FlyState newState);
 
 extern struct setpoint_struct setpoint;
+extern struct control_limits_struct control_limits;
 extern enum FlyState flyState;
 
 

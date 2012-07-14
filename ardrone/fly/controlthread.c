@@ -38,11 +38,6 @@
 #include "controlthread.h"
 #include "controls.h"
 
-float adj_roll;
-float adj_pitch;
-float adj_yaw;
-float adj_h;
-
 pthread_t ctl_thread;
 
 
@@ -51,13 +46,6 @@ float motor[4];
 #define MAX_LOGBUFSIZE 1024
 
 struct att_struct att;
-
-/** @todo split this structure in setpoints and limits */
-
-
-
-
-
 
 struct udp_struct udpNavLog;
 int logcnt = 0;
@@ -68,13 +56,13 @@ int ctl_Init(char *client_addr) {
 	int rc;
  
 	//defaults from AR.Drone app:  pitch,roll max=12deg; yawspeed max=100deg/sec; height limit=on; vertical speed max=700mm/sec; 
-	setpoint.pitch_roll_max = DEG2RAD(12); //degrees     
-	//setpoint.yawsp_max=DEG2RAD(100); //degrees/sec
-	setpoint.h_max = 6.00;
-	setpoint.h_min = 0.40;
-	setpoint.throttle_hover = 0.66;
-	setpoint.throttle_min = 0.50;
-	setpoint.throttle_max = 0.85;
+	control_limits.pitch_roll_max = DEG2RAD(12); //degrees     
+	//control_limits.yawsp_max=DEG2RAD(100); //degrees/sec
+	control_limits.h_max = 6.00;
+	control_limits.h_min = 0.40;
+	control_limits.throttle_hover = 0.66;
+	control_limits.throttle_min = 0.50;
+	control_limits.throttle_max = 0.85;
 
 
 	//Attitude Estimate
@@ -206,25 +194,25 @@ int ctl_FlatTrim() {
 }
 
 void ctl_SetSetpoint(float pitch, float roll, float yaw, float h) {
-	if (pitch > setpoint.pitch_roll_max)
-		pitch = setpoint.pitch_roll_max;
-	if (pitch < -setpoint.pitch_roll_max)
-		pitch = -setpoint.pitch_roll_max;
+	if (pitch > control_limits.pitch_roll_max)
+		pitch = control_limits.pitch_roll_max;
+	if (pitch < -control_limits.pitch_roll_max)
+		pitch = -control_limits.pitch_roll_max;
 	setpoint.pitch = pitch;
-	if (roll > setpoint.pitch_roll_max)
-		roll = setpoint.pitch_roll_max;
-	if (roll < -setpoint.pitch_roll_max)
-		roll = -setpoint.pitch_roll_max;
+	if (roll > control_limits.pitch_roll_max)
+		roll = control_limits.pitch_roll_max;
+	if (roll < -control_limits.pitch_roll_max)
+		roll = -control_limits.pitch_roll_max;
 	setpoint.roll = roll;
-	//if(yaw > setpoint.yawsp_max) yaw = setpoint.yawsp_max;
-	//if(yaw < -setpoint.yawsp_max) yaw = -setpoint.yawsp_max;
+	//if(yaw > control_limits.yawsp_max) yaw = control_limits.yawsp_max;
+	//if(yaw < -control_limits.yawsp_max) yaw = -control_limits.yawsp_max;
 	setpoint.yaw = yaw;
-	if (h > setpoint.h_max)
-		h = setpoint.h_max;
+	if (h > control_limits.h_max)
+		h = control_limits.h_max;
 	if (h <= 0)
 		h = 0;
-	if (h > 0 && h < setpoint.h_min)
-		h = setpoint.h_min;
+	if (h > 0 && h < control_limits.h_min)
+		h = control_limits.h_min;
 	setpoint.h = h;
 }
 

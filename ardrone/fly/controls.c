@@ -2,6 +2,8 @@
 #include <stdio.h>
 
 struct setpoint_struct setpoint;
+struct control_limits_struct control_limits;
+
 enum FlyState flyState;
 
 const char *stateName(enum FlyState state)
