@@ -23,7 +23,7 @@
 #include <sys/types.h>
 #include "video.h"
 
-void video_cg(img_struct* img) 
+void video_cg(struct img_struct* img) 
 {
 	int h=img->h;
 	int w=img->w;
@@ -50,7 +50,7 @@ void video_cg(img_struct* img)
 	printf("x=%10.6f y=%10.6f\n",cg_x,cg_y);
 }
 
-void video_blocksum(img_struct* img1, img_struct* img2, int* dx_out, int* dy_out) 
+void video_blocksum(struct img_struct* img1, struct img_struct* img2, int* dx_out, int* dy_out) 
 {
 	int h=img1->h;
 	int w=img1->w;
@@ -89,15 +89,15 @@ void video_blocksum(img_struct* img1, img_struct* img2, int* dx_out, int* dy_out
 
 int main(int argc,char ** argv)
 {
-	vid_struct vid;
+	struct vid_struct vid;
 	vid.device = (char*)"/dev/video1";
 	vid.w=176;
 	vid.h=144;
 	vid.n_buffers = 4;
 	video_Init(&vid);
 
-	img_struct* img_old = video_CreateImage(&vid);
-	img_struct* img_new = video_CreateImage(&vid);
+	struct img_struct* img_old = video_CreateImage(&vid);
+	struct img_struct* img_new = video_CreateImage(&vid);
 	
 	int dx,dy;
 	int x=0,y=0;
@@ -114,7 +114,7 @@ int main(int argc,char ** argv)
 		
 		if(dx!=0 || dy!=0) {
 			//swap buffers
-			img_struct* tmp = img_new;
+			struct img_struct* tmp = img_new;
 			img_new=img_old;
 			img_old=tmp;
 		}

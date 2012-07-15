@@ -44,7 +44,7 @@
 pthread_t video_thread;
 void *video_thread_main(void* data)
 {
-	vid_struct* vid = (vid_struct*)data;
+	struct vid_struct* vid = (struct vid_struct*)data;
 	printf("video_thread_main started\n");
     for (;;) {
 		fd_set fds;
@@ -69,7 +69,6 @@ void *video_thread_main(void* data)
 		}
 
 		struct v4l2_buffer buf;
-		unsigned int i;
 
 		CLEAR(buf);
 		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -95,9 +94,10 @@ void *video_thread_main(void* data)
 			break;    
 		}
     }
+    return 0;
 }
 
-int video_Init(vid_struct *vid)
+int video_Init(struct vid_struct *vid)
 {
     struct v4l2_capability cap;
     struct v4l2_format fmt;
@@ -144,7 +144,7 @@ int video_Init(vid_struct *vid)
 
     printf("Buffer count = %d\n", vid->n_buffers);
 
-    vid->buffers = (buffer_struct*)calloc(vid->n_buffers, sizeof(buffer_struct));
+    vid->buffers = (struct buffer_struct*)calloc(vid->n_buffers, sizeof(struct buffer_struct));
 
     for (i = 0; i < vid->n_buffers; ++i) {
 		struct v4l2_buffer buf;
@@ -199,7 +199,7 @@ int video_Init(vid_struct *vid)
 	return 0;
 }
 
-void video_Close(vid_struct *vid)
+void video_Close(struct vid_struct *vid)
 {
     for (int i = 0; i < vid->n_buffers; ++i) {
     	if (-1 == munmap(vid->buffers[i].buf, vid->buffers[i].length)) printf("munmap() failed.\n");
@@ -207,9 +207,9 @@ void video_Close(vid_struct *vid)
     close(vid->fd);
 }
 
-img_struct *video_CreateImage(vid_struct *vid)
+struct img_struct *video_CreateImage(struct vid_struct *vid)
 {
-	img_struct* img = (img_struct*)malloc(sizeof(img_struct));
+	struct img_struct* img = (struct img_struct*)malloc(sizeof(struct img_struct));
 	img->w=vid->w;
 	img->h=vid->h;
 	img->buf = (unsigned char*)malloc(vid->h*vid->w);
@@ -218,7 +218,7 @@ img_struct *video_CreateImage(vid_struct *vid)
 
 pthread_mutex_t video_grab_mutex = PTHREAD_MUTEX_INITIALIZER; 
 
-void video_GrabImage(vid_struct *vid, img_struct *img) {
+void video_GrabImage(struct vid_struct *vid, struct img_struct *img) {
 	pthread_mutex_lock(&video_grab_mutex);
 	vid->img = img;
 	vid->trigger=1;

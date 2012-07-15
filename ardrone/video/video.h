@@ -43,16 +43,16 @@ struct vid_struct {
 	
 //private members	
 	int trigger;
-	img_struct *img;
-	buffer_struct * buffers;
+	struct img_struct *img;
+	struct buffer_struct * buffers;
 	int fd;
 };
 
 
-int video_Init(vid_struct *vid);
+int video_Init(struct vid_struct *vid);
 //create a new blank image
-img_struct *video_CreateImage(vid_struct *vid);
+struct img_struct *video_CreateImage(struct vid_struct *vid);
 //grabs next B&W image from stream (blocking)
-void video_GrabImage(vid_struct *vid, img_struct *img);
-void video_Close(vid_struct *vid);
+void video_GrabImage(struct vid_struct *vid, struct img_struct *img);
+void video_Close(struct vid_struct *vid);
 #endif
