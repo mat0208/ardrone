@@ -88,6 +88,7 @@ int mot_Init() {
 		printf("ERROR: Return code from pthread_create(mot_thread) is %d\n", rc);
 		return 202;
 	}
+	return 0;
 }
 
 void mot_SetLed(u08 mot_id, u08 led) 

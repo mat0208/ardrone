@@ -21,8 +21,8 @@ const char *stateName(enum FlyState state)
 
 
 
-void switchState(enum FlyState newState)
+void switchState(struct drone_state_struct * dronestate, enum FlyState newState)
 {
   printf("Switching state to %d: %s\n",newState, stateName(newState));
-  flyState=newState;
+  dronestate->flyState=newState;
 }
