@@ -127,6 +127,10 @@ void *ctl_thread_main(void* data) {
 		}
 
                 control_strategy.calculateMotorSpeeds(&ds, motor);
+
+		//send to motors
+		mot_Run(motor[0], motor[1], motor[2], motor[3]);
+
 		 
 		if ((cnt % 200) == 0) {
 			printf("SET ROLL %5.2f PITCH %5.2f YAW %5.2f   H %5.2f\n",
@@ -135,8 +139,6 @@ void *ctl_thread_main(void* data) {
 					ds.att.pitch, ds.att.yaw, ds.att.h);
 		}
 	
-		//send to motors
-		mot_Run(motor[0], motor[1], motor[2], motor[3]);
 
 		//blink leds    
 		cnt++;
