@@ -50,6 +50,32 @@ void video_cg(struct img_struct* img)
 	printf("x=%10.6f y=%10.6f\n",cg_x,cg_y);
 }
 
+void write_pgm(struct img_struct *img, char *fn)
+{
+  FILE *fp=fopen(fn,"w");
+  if(fp==NULL) {
+    perror("Open pbm for writing");
+    return;
+  }
+  fprintf(fp,"P2\n");
+  int pos=0;
+  fprintf(fp,"%d %d\n",img->w, img->h);
+  fprintf(fp,"255\n");
+  for(int h=0; h<img->h; h++) {
+    for(int w=0; w<img->w/2; w++) {
+      unsigned int u=img->buf[pos++];
+      unsigned int y1=img->buf[pos++];
+      unsigned int v=img->buf[pos++];
+      unsigned int y2=img->buf[pos++];
+      
+      fprintf(fp, "%d %d ",y1,y2);
+    }
+    fprintf(fp,"\n");
+  }
+  fclose(fp);
+
+}
+
 void video_blocksum(struct img_struct* img1, struct img_struct* img2, int* dx_out, int* dy_out) 
 {
 	int h=img1->h;
@@ -65,12 +91,14 @@ void video_blocksum(struct img_struct* img1, struct img_struct* img2, int* dx_ou
 	for(int dy=-dmax;dy<=dmax;dy++) {
 		for(int dx=-dmax;dx<=dmax;dx++) {
 			int sum=0;
-			for(int y=dmax;y<h-dmax;y++) {
+			for(int y=dmax;y<h-dmax && sum < min_sum;y++) {
 				int i1 = y*w + dmax;
 				int i2 = (y+dy)*w + dmax+dx;
+				
+				
 				for(int x=dmax;x<w-dmax;x++) {
 					//printf("x=%d y=%d i1=%d i2=%d\n",x,y,i1,i2);
-					sum += abs(buf1[i1] - buf2[i2]);
+					sum += abs(buf1[i1*2+1] - buf2[i2*2+1]);
 					i1++;
 					i2++;
 				}
@@ -90,11 +118,14 @@ void video_blocksum(struct img_struct* img1, struct img_struct* img2, int* dx_ou
 int main(int argc,char ** argv)
 {
 	struct vid_struct vid;
-	vid.device = (char*)"/dev/video1";
-	vid.w=176;
-	vid.h=144;
-	vid.n_buffers = 4;
-	video_Init(&vid);
+	vid.device = (char*)"/dev/video2";
+	if(argc > 1) vid.device=argv[1];
+	
+	printf("Device is %s\n",vid.device);
+	vid.w=320;
+	vid.h=240;
+	vid.n_buffers = 1;
+	if(video_Init(&vid) !=0) exit(-1);
 
 	struct img_struct* img_old = video_CreateImage(&vid);
 	struct img_struct* img_new = video_CreateImage(&vid);
@@ -106,6 +137,11 @@ int main(int argc,char ** argv)
     for (;;) {
 		video_GrabImage(&vid, img_new);
 
+/*
+		char fn[100];
+		snprintf(fn,100,"pgm_%d.pgm",img_new->seq);
+		write_pgm(img_new,fn);
+*/
 		//process
 		video_blocksum(img_old, img_new, &dx, &dy);
 		x+=dx;

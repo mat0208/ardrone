@@ -85,7 +85,7 @@ void *video_thread_main(void* data)
 		if(vid->trigger) {
 			vid->img->timestamp = util_timestamp();
 			vid->img->seq = vid->seq;
-			memcpy(vid->img->buf, vid->buffers[buf.index].buf, vid->w*vid->h);
+			memcpy(vid->img->buf, vid->buffers[buf.index].buf, vid->w*vid->h*2);
 			vid->trigger=0;
 		}
 	
@@ -111,20 +111,20 @@ int video_Init(struct vid_struct *vid)
 	vid->fd = open(vid->device, O_RDWR | O_NONBLOCK, 0);
 
     if (ioctl(vid->fd, VIDIOC_QUERYCAP, &cap) < 0) {
-		printf("ioctl() VIDIOC_QUERYCAP failed.\n");
+		perror("ioctl() VIDIOC_QUERYCAP failed.\n");
 		return -1;    
     }
 
-    //printf("2 driver = %s, card = %s, version = %d, capabilities = 0x%x\n", cap.driver, cap.card, cap.version, cap.capabilities);
+    printf("2 driver = %s, card = %s, version = %d, capabilities = 0x%x\n", cap.driver, cap.card, cap.version, cap.capabilities);
 
     CLEAR(fmt);
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	fmt.fmt.pix.width = vid->w;	
 	fmt.fmt.pix.height = vid->h;
-    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_UYVY;
 
     if (ioctl(vid->fd, VIDIOC_S_FMT, &fmt) < 0) {
-		printf("ioctl() VIDIOC_S_FMT failed.\n");
+		perror("ioctl() VIDIOC_S_FMT failed ");
 		return -1;    
     }
 
@@ -138,7 +138,7 @@ int video_Init(struct vid_struct *vid)
     req.memory = V4L2_MEMORY_MMAP;
 
     if (ioctl(vid->fd, VIDIOC_REQBUFS, &req) < 0) {
-		printf("ioctl() VIDIOC_REQBUFS failed.\n");
+		perror("ioctl() VIDIOC_REQBUFS failed ");
 		return -1;    
     }
 
@@ -155,7 +155,7 @@ int video_Init(struct vid_struct *vid)
 		buf.index = i;
 
 		if (ioctl(vid->fd, VIDIOC_QUERYBUF, &buf) < 0) {
-			printf("ioctl() VIDIOC_QUERYBUF failed.\n");
+			perror("ioctl() VIDIOC_QUERYBUF failed ");
 			return -1;    
 		}
 
@@ -212,7 +212,7 @@ struct img_struct *video_CreateImage(struct vid_struct *vid)
 	struct img_struct* img = (struct img_struct*)malloc(sizeof(struct img_struct));
 	img->w=vid->w;
 	img->h=vid->h;
-	img->buf = (unsigned char*)malloc(vid->h*vid->w);
+	img->buf = (unsigned char*)malloc(vid->h*vid->w*2);
 	return img;
 }
 
