@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 
 SET( CMAKE_C_COMPILER arm-none-linux-gnueabi-gcc )
-SET( CMAKE_C_FLAGS "-std=c99 -Wall")
+SET( CMAKE_C_FLAGS "-std=c99 -Wall -O2")
 
 link_libraries(m)
 link_libraries(pthread)
@@ -20,7 +20,9 @@ SET( FLY_SOURCES 	main_fly.c
 	../udp/udp.c
 	../attitude/attitude.c
 	../attitude/ars.c
-
+	../horizontal_velocities/horizontal_velocities.c
+	../video/video.c
+	../video/blocksum.c
 )
 
 add_executable(fly

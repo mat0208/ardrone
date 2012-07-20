@@ -13,6 +13,7 @@ struct img_struct* img_new;
 
 /** these are protected by mutex */
 float x, y;
+unsigned long seqNum;
 
 /** width of a pixel in meters at 1 m height */
 #define CAM_HEIGHT_SCALE_FACTOR 0.01
@@ -42,6 +43,7 @@ void *horizontal_velocities_thread_main(void *data)
                 pthread_mutex_lock(&velocity_access_mutex);     
 		x+=dxi;
 		y+=dyi;
+		seqNum++;
 		
                 pthread_mutex_unlock(&velocity_access_mutex);     
 		
@@ -70,6 +72,7 @@ int horizontal_velocities_init(struct horizontal_velocities_struct *hv)
 	
 	x=0;
 	y=0;
+	seqNum=0;
 	
 	hv->xv=0;
 	hv->yv=0;
@@ -105,13 +108,15 @@ void horizontal_velocities_getSample(struct horizontal_velocities_struct *hv, st
         hv->prevY=y;
         hv->prevTime=time;
      }
+     hv->seqNum=seqNum;
      pthread_mutex_unlock(&velocity_access_mutex);     
 }  
 
 
 void horizontal_velocities_print(struct horizontal_velocities_struct *hv)
 {
-	printf("xv=%5.1f,yv=%5.1f, dt=%4.1f\n"
+	printf("seq=%ld   xv=%5.1f,yv=%5.1f, dt=%4.1f\n"
+	        ,hv->seqNum
 		,hv->xv, hv->yv
 		,hv->dt*1000
 	);

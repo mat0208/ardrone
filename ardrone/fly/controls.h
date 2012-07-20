@@ -2,6 +2,7 @@
 #define _CONTROLS_H
 
 #include "../attitude/attitude.h"
+#include "../horizontal_velocities/horizontal_velocities.h"
 
 
 struct setpoint_struct {
@@ -36,6 +37,7 @@ const char *stateName(enum FlyState state);
 
 struct drone_state_struct {
 	struct att_struct att;
+	struct horizontal_velocities_struct hor_velocities;
 	enum FlyState flyState;
 	struct setpoint_struct setpoint;
 	struct control_limits_struct control_limits;
@@ -46,7 +48,7 @@ void switchState(struct drone_state_struct *dronestate, enum FlyState newState);
 struct control_strategy_struct {
 	/** called once */
 	void (*init)();
-	/** called every time new attitude data is available, should write desired motor speeds to the float-array */
+	/** called every time new attitude data is available, should write desired motor velocities to the float-array */
 	void (*calculateMotorSpeeds)(struct drone_state_struct *, float[4]);
 	/** should write upto maxLen (second parm) bytes into the char * and return number of bytes written (including \0) */
 	unsigned int (*getLogText)(char *,unsigned int);

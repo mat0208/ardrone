@@ -14,6 +14,7 @@ struct horizontal_velocities_struct
     float xv; // speed on x axis in m/s, front moving forwards is positive
     float yv; // speed on y axis in m/s, side moving left is positive 
     double dt; // time since last horizontal speed estimate update in sec;
+    unsigned long seqNum;
     
     
     // private

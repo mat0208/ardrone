@@ -77,6 +77,10 @@ int ctl_Init(char *client_addr) {
 	rc = att_Init(&ds.att);
 	if (rc)
 		return rc;
+		
+	rc = horizontal_velocities_init(&ds.hor_velocities);
+	if (rc)
+		return rc;
 
 	//udp logger
 	if (client_addr) {
@@ -110,18 +114,23 @@ void *ctl_thread_main(void* data) {
 
 	while (1) {
 		rc = att_GetSample(&ds.att);
-		if (!rc)
+		if (!rc) {
+			horizontal_velocities_getSample(&ds.hor_velocities,&ds.att);
 			break;
+		}
 		if (rc != 1)
 			printf("ctl_thread_main: att_GetSample return code=%d", rc);
+			
 	}
 
 	while (1) {
 		//get sample
 		while (1) {
 			rc = att_GetSample(&ds.att); //non blocking call
-			if (!rc)
-				break; //got a sample
+			if (!rc) {
+				horizontal_velocities_getSample(&ds.hor_velocities,&ds.att);
+				break;
+			}
 			if (rc != 1)
 				printf("ctl_thread_main: att_GetSample return code=%d", rc);
 		}
@@ -164,7 +173,7 @@ void navLog_Send() {
 
 	logcnt++;
 	logbuflen = snprintf(logbuf,MAX_LOGBUFSIZE,
-			"%d,%f,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,"
+			"%d,%f,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%ld"
 			//sequence+timestamp
 			, logcnt, ds.att.ts // navdata timestamp in sec
 			, ds.flyState
@@ -193,6 +202,10 @@ void navLog_Send() {
 			, motval[1]
 			, motval[2]
 			, motval[3]
+			, ds.hor_velocities.xv
+			, ds.hor_velocities.yv
+			, ds.hor_velocities.dt
+			, ds.hor_velocities.seqNum
 			);
 			
 	logbuflen+=control_strategy.getLogText(logbuf+logbuflen,MAX_LOGBUFSIZE-logbuflen);
