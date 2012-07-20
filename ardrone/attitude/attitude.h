@@ -42,7 +42,7 @@ struct att_struct {
     //height and speed estimate
     float h; //smoothend hraw
     float hv; //vertical speed in m/sec
-
+    
     double dt; // time since last navdata sample in sec
 
     //copy of physical navdata values
@@ -57,7 +57,6 @@ struct att_struct {
     float gz; // gyro value z-axis in [rad/sec] right turn, i.e. yaw left is positive
 };
 
-int att_Init(struct att_struct *att);
 int att_Init(struct att_struct *att);
 int att_GetSample(struct att_struct *att);
 int att_FlatTrim(struct att_struct *att); //recalibrate

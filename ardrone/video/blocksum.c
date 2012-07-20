@@ -1,18 +1,20 @@
 #include "video.h"
 #include "blocksum.h"
 
+#include <stdlib.h>
+
 void video_blocksum(struct img_struct* img1, struct img_struct* img2, int* dx_out, int* dy_out) 
 {
 	int h=img1->h;
 	int w=img1->w;
-	int n=w*h;
 	unsigned char* buf1 = img1->buf;
 	unsigned char* buf2 = img2->buf;
 	
-	int dmax = 3;
+	int dmax = 5;
 	int min_sum = 2000000000;
 	int min_dx = -99;
 	int min_dy = -99;
+	/** @todo search first around center, search in a lower resolution image... */
 	for(int dy=-dmax;dy<=dmax;dy++) {
 		for(int dx=-dmax;dx<=dmax;dx++) {
 			int sum=0;
