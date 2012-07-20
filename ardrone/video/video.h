@@ -21,6 +21,9 @@
 #ifndef _VIDEO_H
 #define _VIDEO_H
 
+#include <sys/types.h>
+
+
 struct buffer_struct {
     void * buf;
     size_t length;
@@ -55,4 +58,6 @@ struct img_struct *video_CreateImage(struct vid_struct *vid);
 //grabs next B&W image from stream (blocking)
 void video_GrabImage(struct vid_struct *vid, struct img_struct *img);
 void video_Close(struct vid_struct *vid);
+
+void write_pgm(struct img_struct *img, char *fn);
 #endif

@@ -225,3 +225,29 @@ void video_GrabImage(struct vid_struct *vid, struct img_struct *img) {
 	while(vid->trigger) pthread_yield();
 	pthread_mutex_unlock(&video_grab_mutex);
 }
+
+void write_pgm(struct img_struct *img, char *fn)
+{
+  FILE *fp=fopen(fn,"w");
+  if(fp==NULL) {
+    perror("Open pbm for writing");
+    return;
+  }
+  fprintf(fp,"P2\n");
+  int pos=0;
+  fprintf(fp,"%d %d\n",img->w, img->h);
+  fprintf(fp,"255\n");
+  for(int h=0; h<img->h; h++) {
+    for(int w=0; w<img->w/2; w++) {
+//      unsigned int u=img->buf[pos++];
+      unsigned int y1=img->buf[pos++];
+//      unsigned int v=img->buf[pos++];
+      unsigned int y2=img->buf[pos++];
+      
+      fprintf(fp, "%d %d ",y1,y2);
+    }
+    fprintf(fp,"\n");
+  }
+  fclose(fp);
+
+}

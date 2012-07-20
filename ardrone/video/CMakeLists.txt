@@ -9,6 +9,7 @@ add_executable(video
 	video.c
 	main_video.c
 	../util/util.c
+	blocksum.c
 )
 
 	
