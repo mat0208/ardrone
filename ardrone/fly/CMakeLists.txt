@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 
-SET( CMAKE_C_COMPILER arm-none-linux-gnueabi-gcc )
-SET( CMAKE_C_FLAGS "-std=c99 -Wall -O2")
+include (../ardrone2_toolchain.cmake )
 
 link_libraries(m)
 link_libraries(pthread)

@@ -27,6 +27,7 @@ void *horizontal_velocities_thread_main(void *data)
 
     video_GrabImage(&vid, img_old);
     for (;;) {
+                float start=util_timestamp();
 		video_GrabImage(&vid, img_new);
 
                 int dxi;
@@ -46,9 +47,8 @@ void *horizontal_velocities_thread_main(void *data)
 		seqNum++;
 		
                 pthread_mutex_unlock(&velocity_access_mutex);     
-		
-		
-		
+                float endTime=util_timestamp();
+                printf("Loop took %3.1f ms\n", (endTime-start)*1000 );
     }
 
     video_Close(&vid);

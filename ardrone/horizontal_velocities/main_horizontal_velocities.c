@@ -26,7 +26,8 @@ int main()
 	if(rc) return rc;
 	printf("Init HV OK\r\n");
 
-	 
+	
+	int c=0; 
 	//main loop	
 	while(1) { 
 		rc = att_GetSample(&att);
@@ -35,7 +36,9 @@ int main()
 		}
 
                 horizontal_velocities_getSample(&hv,&att);
-		horizontal_velocities_print(&hv);
+                
+                c++;
+                if(c%100 ==0) horizontal_velocities_print(&hv);
 	}
 	horizontal_velocities_close();
 	att_close();
