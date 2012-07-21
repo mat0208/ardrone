@@ -8,10 +8,17 @@ install cmake, make
 $ cmake CMakeList.txt 
 $ make
 
-Windows:
+Windows / make:
 Install cmake
 Install make
 
 $ cmake  -G "MinGW Makefiles" -DCMAKE_TOOLCHAIN_FILE=ardrone2_toolchain.cmake CMakeLists.txt
 $ make
  
+ 
+Windows / eclipse:
+Install cmake
+Install mingw
+
+$ cmake  -G "Eclipse CDT4 - MinGW Makefiles" -DCMAKE_TOOLCHAIN_FILE=ardrone2_toolchain.cmake CMakeLists.txt
+Import project with eclipse
