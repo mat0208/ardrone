@@ -12,12 +12,12 @@ void diep(const char *s)
 
 int main(void)
 {
-  udp_struct udp;
+  struct udp_struct udp;
 
   int msglen;
   char buf[512];
   
-  if(udpServer_Init(&udp,9930)) diep("udpServer_Init");
+  if(udpServer_Init(&udp,9930,1)) diep("udpServer_Init");
   
   for (int i=0; i<10; i++) {
     int cnt=0;

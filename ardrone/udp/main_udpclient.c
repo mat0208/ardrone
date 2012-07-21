@@ -12,7 +12,7 @@ void diep(const char *s)
 
 int main(void)
 {
-  udp_struct udp;
+  struct udp_struct udp;
 
   int msglen;
   char buf[512];
