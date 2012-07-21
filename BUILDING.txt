@@ -1,0 +1,17 @@
+Building tested under Linux and Windows using Sourcery G++ Lite 2011.03-41 for ARM GNU/Linux 
+
+1. Fetch and install toolchain
+Sourcery G++ Lite 2011.03-41 for ARM GNU/Linux
+
+Linux:
+install cmake, make
+$ cmake CMakeList.txt 
+$ make
+
+Windows:
+Install cmake
+Install make
+
+$ cmake  -G "MinGW Makefiles" -DCMAKE_TOOLCHAIN_FILE=ardrone2_toolchain.cmake CMakeLists.txt
+$ make
+ 
