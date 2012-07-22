@@ -16,11 +16,6 @@ struct horizontal_velocities_struct
     double dt; // time since last horizontal speed estimate update in sec;
     unsigned long seqNum;
     
-    
-    // private
-    float prevX; // previus x value
-    float prevY; // previous y value
-    double prevTime; // previos time;
 };
 
 int horizontal_velocities_init(struct horizontal_velocities_struct *hv);
@@ -28,7 +23,7 @@ int horizontal_velocities_init(struct horizontal_velocities_struct *hv);
 /** @param att a up-to-date attitute struct */
 void horizontal_velocities_getSample(struct horizontal_velocities_struct *hv, struct att_struct *att);
 
-void horizontal_velocities_print(struct horizontal_velocities_struct *hv);
+void horizontal_velocities_print(struct horizontal_velocities_struct *hv, double xpos, double ypos, double h);
 
 void horizontal_velocities_close();
 

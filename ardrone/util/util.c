@@ -49,7 +49,7 @@ double util_timestamp()
 {
   struct timeval tv;
   gettimeofday(&tv, NULL); 
-  return (double)tv.tv_sec+((double)tv.tv_usec)/1000000;
+  return (double)tv.tv_sec+((double)tv.tv_usec)/1000000.0f;
 }
 
 //return timestamp in microseconds since first call to this function

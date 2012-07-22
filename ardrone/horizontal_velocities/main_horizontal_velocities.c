@@ -29,6 +29,7 @@ int main()
 	
 	int c=0; 
 	//main loop	
+	double xpos = 0.0, ypos = 0.0;
 	while(1) { 
 		rc = att_GetSample(&att);
 		if(rc) {
@@ -36,8 +37,10 @@ int main()
 		}
 
 		horizontal_velocities_getSample(&hv,&att);		
+		xpos += hv.xv * att.dt;
+		ypos += hv.yv * att.dt;
 		c++;
-		if(c%100 ==0) horizontal_velocities_print(&hv);
+		if(c%100 ==0) horizontal_velocities_print(&hv, xpos, ypos, att.h);
 	}
 	horizontal_velocities_close();
 	att_Close();
