@@ -58,7 +58,6 @@ void pid_strategy_init()
 void pidStrategy_calculateMotorSpeedsFlying(struct horizontal_velocities_struct *hv, struct att_struct *att, struct setpoint_struct *setpoint, struct control_limits_struct *control_limits, float motorOut[4])
 {
         /* overwrite setpoints for now */
-
         targetRoll=setpoint->roll;
         targetPitch=setpoint->pitch;
         
@@ -93,7 +92,7 @@ void pidStrategy_calculateMotorSpeedsFlying(struct horizontal_velocities_struct 
 void pid_strategy_calculateMotorSpeeds(struct drone_state_struct *cs, float motorOut[4])
 {
 	struct setpoint_struct * setpoint=&cs->setpoint;
-	switch(flyState) {
+	switch(cs->flyState) {
 	  case Landed:
 		for(int i=0;i<4;i++) motorOut[i]=0;
 		if(setpoint->h>0) switchState(cs,Launching);

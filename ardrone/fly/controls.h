@@ -29,7 +29,7 @@ enum FlyState {
 	Flying=11,
 	Landing=12,
 	Error=20
-} flyState;
+};
 
 
 const char *stateName(enum FlyState state);
@@ -55,9 +55,9 @@ struct control_strategy_struct {
 };
 
 #define LOAD_STRATEGY(targetStruct, name) \
-		targetStruct.init=  pid_strategy_init; \
-		targetStruct.calculateMotorSpeeds=  pid_strategy_calculateMotorSpeeds;\
-		targetStruct.getLogText=  pid_strategy_getLogText;
+		targetStruct.init=  &pid_strategy_init; \
+		targetStruct.calculateMotorSpeeds=  &pid_strategy_calculateMotorSpeeds;\
+		targetStruct.getLogText=  &pid_strategy_getLogText;
 	
 
 
