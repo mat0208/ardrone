@@ -60,7 +60,7 @@ void *ctl_thread_main(void* data);
 
 int ctl_Init(char *client_addr) {
 
-	LOAD_STRATEGY(control_strategy,pid_strategy)
+	LOAD_STRATEGY(control_strategy, pid_strategy);
 	
 	printf("%p %p %p \n", control_strategy.init, control_strategy.calculateMotorSpeeds, control_strategy.getLogText);
 

@@ -55,14 +55,10 @@ struct control_strategy_struct {
 };
 
 #define LOAD_STRATEGY(targetStruct, name) \
-		targetStruct.init=  &pid_strategy_init; \
-		targetStruct.calculateMotorSpeeds=  &pid_strategy_calculateMotorSpeeds;\
-		targetStruct.getLogText=  &pid_strategy_getLogText;
-	
-
-
-
+	do { \
+		targetStruct.init			= name ## _init; \
+		targetStruct.calculateMotorSpeeds	= name ## _calculateMotorSpeeds; \
+		targetStruct.getLogText			= name ## _getLogText; \
+	} while(0)	
 
 #endif
-
-
