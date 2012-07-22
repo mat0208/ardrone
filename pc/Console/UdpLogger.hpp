@@ -17,10 +17,11 @@ public:
   UdpLogger(boost::asio::io_service& ios, uint16_t port, const string& logfile) : socket_(ios, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port))
   {
     log_.open(logfile.c_str(), std::ios::app);
+    /*
     log_ << "seq,time,state,ax,ay,az,gx,gy,gz,"
             "h_vel,set_h,height,thottle,set_pitch,att_pitch,set_roll,att_roll,set_yaw,att_yaw,"
             "motor1,motor2,motor3,motor4,adj_pitch,adj_roll,adj_yaw,adj_h" << std::endl;
-    
+            */
     
   }
   void start()

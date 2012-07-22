@@ -4,7 +4,10 @@
 #include <boost/version.hpp>
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
+#include <boost/date_time/posix_time/ptime.hpp>
+#include <boost/date_time/posix_time/time_formatters_limited.hpp>
 #include <memory>
+#include <sstream>
 #include "Drone.hpp"
 #include "Joystick.hpp"
 #include "Keyboard.hpp"
@@ -277,14 +280,29 @@ void runJoystickControlled(Drone& drone, const string& joystickDevice)
   drone.io_service().run();
 }
 
+static
+std::string createLogFileName() {
+  std::ostringstream strm;
+  boost::posix_time::ptime now(boost::posix_time::second_clock::local_time());
+  strm << boost::posix_time::to_iso_string(now) << '_' << getpid() << "_ardrone2.csv"; 
+  return strm.str();
+}
+
 void runConsole(const bpo::variables_map& vm)
 {
   boost::asio::io_service srv;
   Drone drone(vm["address"].as<string>(), srv);
   std::auto_ptr<UdpLogger> logger;
+  
+  std::string logfileName;
+  if (vm.count("autolog")) {
+    logfileName = createLogFileName();
+  } else if (vm.count("loggfile")) {
+    logfileName = vm["logfile"].as<string>();
+  }
 
-  if (vm.count("logfile")) {
-    logger.reset(new UdpLogger(srv, 7778, vm["logfile"].as<string>()));
+  if (!logfileName.empty()) {
+    logger.reset(new UdpLogger(srv, 7778, logfileName));
     logger->start();
   }
 
@@ -307,7 +325,8 @@ int main(int argc, char **argv) {
       ("help,h", "print this help message")
       ("address", bpo::value<string>()->default_value("192.168.1.1"), "address of the drone")
       ("joystick", bpo::value<string>(), "use joystick with arg as device name")
-      ("logfile", bpo::value<string>(), "enable logging of the csv data to arg sent by the drone");
+      ("logfile", bpo::value<string>(), "enable logging of the csv data to arg sent by the drone")
+      ("autolog", "enable logging to a <YYYYMMDDTHHMMSS>_<pid>_console.log")
     ;
     bpo::options_description command_line_options;
     command_line_options.add(options);
