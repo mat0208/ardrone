@@ -19,6 +19,7 @@
  MA 02110-1301 USA.
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>   /* Standard input/output definitions */
 #include <string.h>  /* String function definitions */
 #include <unistd.h>  /* UNIX standard function definitions */

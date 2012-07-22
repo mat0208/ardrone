@@ -35,13 +35,12 @@ int main()
 			printf("ERROR: att_getSample return code=%d\n",rc); 
 		}
 
-                horizontal_velocities_getSample(&hv,&att);
-                
-                c++;
-                if(c%100 ==0) horizontal_velocities_print(&hv);
+		horizontal_velocities_getSample(&hv,&att);		
+		c++;
+		if(c%100 ==0) horizontal_velocities_print(&hv);
 	}
 	horizontal_velocities_close();
-	att_close();
+	att_Close();
 	printf("\nDone...\n");
 	return 0;
 }

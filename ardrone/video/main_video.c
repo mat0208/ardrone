@@ -33,7 +33,7 @@ int main(int argc,char ** argv)
 	printf("Device is %s\n",vid.device);
 	vid.w=320;
 	vid.h=240;
-	vid.n_buffers = 1;
+	vid.n_buffers = 0;
 	if(video_Init(&vid) !=0) exit(-1);
 
 	struct img_struct* img_old = video_CreateImage(&vid);

@@ -41,14 +41,14 @@ void *horizontal_velocities_thread_main(void *data)
 			img_old=tmp;
 		}
 		
-                pthread_mutex_lock(&velocity_access_mutex);     
+        pthread_mutex_lock(&velocity_access_mutex);     
 		x+=dxi;
 		y+=dyi;
 		seqNum++;
 		
-                pthread_mutex_unlock(&velocity_access_mutex);     
-                float endTime=util_timestamp();
-                printf("Loop took %3.1f ms\n", (endTime-start)*1000 );
+		pthread_mutex_unlock(&velocity_access_mutex);     
+		float endTime=util_timestamp();
+		printf("Loop took %3.1f ms\n", (endTime-start)*1000 );
     }
 
     video_Close(&vid);
@@ -81,12 +81,12 @@ int horizontal_velocities_init(struct horizontal_velocities_struct *hv)
 	hv->prevY=0;
 	hv->prevTime=util_timestamp();
 
-        int rc = pthread_create(&horizontal_velocities_thread, NULL, horizontal_velocities_thread_main, NULL);
-        if(rc) {
-                printf("ctl_Init: Return code from pthread_create(hor_vel_thread) is %d\n", rc);
-                return 202;
-        }
-        return 0;
+	int rc = pthread_create(&horizontal_velocities_thread, NULL, horizontal_velocities_thread_main, NULL);
+	if(rc) {
+		printf("ctl_Init: Return code from pthread_create(hor_vel_thread) is %d\n", rc);
+		return 202;
+	}
+	return 0;
 }
 
 

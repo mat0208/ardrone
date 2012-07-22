@@ -30,6 +30,7 @@ void horizontal_velocities_getSample(struct horizontal_velocities_struct *hv, st
 
 void horizontal_velocities_print(struct horizontal_velocities_struct *hv);
 
+void horizontal_velocities_close();
 
 #ifdef __cplusplus
 }  
