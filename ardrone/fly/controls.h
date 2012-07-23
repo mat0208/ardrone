@@ -54,11 +54,15 @@ struct control_strategy_struct {
 	unsigned int (*getLogText)(char *,unsigned int);
 };
 
+
+#define SET_FPTR(targetStruct, prfx, funcName) \
+	targetStruct.funcName = prfx ## _ ## funcName;
+
 #define LOAD_STRATEGY(targetStruct, name) \
 	do { \
-		targetStruct.init			= name ## _init; \
-		targetStruct.calculateMotorSpeeds	= name ## _calculateMotorSpeeds; \
-		targetStruct.getLogText			= name ## _getLogText; \
+		SET_FPTR(targetStruct, name, init); \
+		SET_FPTR(targetStruct, name, calculateMotorSpeeds); \
+		SET_FPTR(targetStruct, name, getLogText); \
 	} while(0)	
 
 #endif
