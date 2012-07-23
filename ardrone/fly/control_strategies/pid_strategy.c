@@ -24,13 +24,26 @@ float adj_h;
 float throttle;
 
 
-// minum throttle for launching 
+// minimum throttle for launching ramp 
 #define MOTOR_INIT_THROTTLE 0.1
 // ramp end throttle
 #define MOTOR_TAKEOF_THROTTLE 0.55
 /** ramp progress while launching*/
 #define LAUNCHRAMP_LENGTH 600 // 200 ^= 1 second
-int launchRamp;
+int launchRamp=0;
+
+
+// when landing, start ramp below this height over ground
+#define LANDING_HEIGHT_START_RAMP 0.35
+
+// throttle for landing part below min flight height (now height info)
+#define MOTOR_LAND_MAX_THROTTLE  0.50
+// ramp end throttle
+#define MOTOR_LAND_MIN_THROTTLE 0.2
+/** ramp progress while landing*/
+#define LANDRAMP_LENGTH 600 // 200 ^= 1 second
+int landRamp=0;
+
 
 struct setpoint_struct setpoint_landing={0,0,0,0.2};
 
@@ -96,6 +109,8 @@ void pid_strategy_calculateMotorSpeeds(struct drone_state_struct *cs, float moto
 	  case Landed:
 		for(int i=0;i<4;i++) motorOut[i]=0;
 		if(setpoint->h>0) switchState(cs,Launching);
+		launchRamp=0;
+		landRamp=0;
 	  break;
 	  case Launching:
 		launchRamp++;
@@ -103,6 +118,7 @@ void pid_strategy_calculateMotorSpeeds(struct drone_state_struct *cs, float moto
 
 
 		if (cs->att.h > 0 || launchRamp > LAUNCHRAMP_LENGTH) {
+			launchRamp=0;
 			switchState(cs,Flying);
 		}
 		if (setpoint->h < 0.1) switchState(cs,Landing);
@@ -114,11 +130,15 @@ void pid_strategy_calculateMotorSpeeds(struct drone_state_struct *cs, float moto
 	  break;
 
 	  case Landing:
-		if (cs->att.h > 0.32) {
+		if (cs->att.h > LANDING_HEIGHT_START_RAMP) {
 			pidStrategy_calculateMotorSpeedsFlying(&cs->hor_velocities, &cs->att,setpoint,&cs->control_limits,motorOut);
-		} else {
+		} else if (landRamp< LANDRAMP_LENGTH) {
+		  landRamp++;
+                  for(int i=0;i<4;i++) motorOut[i]=MOTOR_LAND_MAX_THROTTLE- landRamp*(MOTOR_LAND_MAX_THROTTLE-MOTOR_LAND_MIN_THROTTLE)/LANDRAMP_LENGTH;
+	        } else {	                 
+	          landRamp=0; 
 		  switchState(cs,Landed);
-			}
+                }
 	  break;
 
 	  case Error:
