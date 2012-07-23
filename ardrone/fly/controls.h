@@ -52,6 +52,8 @@ struct control_strategy_struct {
 	void (*calculateMotorSpeeds)(struct drone_state_struct *, float[4]);
 	/** should write upto maxLen (second parm) bytes into the char * and return number of bytes written (including \0) */
 	unsigned int (*getLogText)(char *,unsigned int);
+	/** should write upto maxLen (second parm) bytes into the char * and return number of bytes written (including \0) */
+	unsigned int (*getLogHeadings)(char *,unsigned int);
 };
 
 #define LOAD_STRATEGY(targetStruct, name) \
@@ -59,6 +61,7 @@ struct control_strategy_struct {
 		targetStruct.init			= name ## _init; \
 		targetStruct.calculateMotorSpeeds	= name ## _calculateMotorSpeeds; \
 		targetStruct.getLogText			= name ## _getLogText; \
+		targetStruct.getLogHeadings		= name ## _getLogHeadings; \
 	} while(0)	
 
 #endif

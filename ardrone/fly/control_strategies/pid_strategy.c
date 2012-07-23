@@ -149,6 +149,20 @@ void pid_strategy_calculateMotorSpeeds(struct drone_state_struct *cs, float moto
 	}
 }
 
+unsigned int pid_strategy_getLogHeadings(char *buf, unsigned int maxLen)
+{
+  int len;
+  len= snprintf(buf,maxLen, 
+        "targetPitch,"
+        "targetRoll,"
+        "adj_pitch,"
+        "adj_roll,"
+        "adj_yaw,"
+        "adj_h"
+      );
+  return len;
+}
+
 unsigned int pid_strategy_getLogText(char *buf,unsigned int maxLen)
 {
   int len;
