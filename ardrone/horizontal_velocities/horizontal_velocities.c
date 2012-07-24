@@ -29,33 +29,34 @@ void *horizontal_velocities_thread_main(void *data)
 
     video_GrabImage(&vid, img_old);
     for (;;) {
-        //double start=util_timestamp();
-		video_GrabImage(&vid, img_new);
+	video_GrabImage(&vid, img_new);
+//        double start=util_timestamp();
 
         int dxi;
         int dyi;
-		video_blocksum(img_old, img_new, &dyi, &dxi);
+	video_blocksum(img_old, img_new, &dyi, &dxi);
 		
-		if(dxi!=0 || dyi!=0) {
-			//swap buffers
-			struct img_struct* tmp = img_new;
-			img_new=img_old;
-			img_old=tmp;
-		}
+	if(dxi!=0 || dyi!=0) {
+		//swap buffers
+		struct img_struct* tmp = img_new;
+		img_new=img_old;
+		img_old=tmp;
+	}
 		
-        pthread_mutex_lock(&velocity_access_mutex);     
         double currentTime = util_timestamp();
+        pthread_mutex_lock(&velocity_access_mutex);     
+
         dt = currentTime-prevTime;
         xv = dxi/dt;
         yv = dyi/dt;
   
         prevTime=currentTime;
 
-		seqNum++;
-		
-		pthread_mutex_unlock(&velocity_access_mutex);     
-		//double endTime=util_timestamp();
-		//printf("Loop took %f (%f-%f) ms\n", (endTime-start)*1000, endTime, start);
+	seqNum++;
+	
+	pthread_mutex_unlock(&velocity_access_mutex);     
+//	double endTime=util_timestamp();
+//	printf("   Loop took %f ms\n", (endTime-start)*1000);
     }
 
     video_Close(&vid);
