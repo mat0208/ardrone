@@ -32,6 +32,9 @@ void ctl_SetSetpointDiff(float pitch, float roll, float yaw, float h);
 void ctl_Close();
 void ctl_SetGas(float gas);
 
+void navLog_sendLogHeaders();
+
+
 #ifdef __cplusplus
 }
 #endif

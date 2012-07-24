@@ -1,4 +1,4 @@
-	/*
+/*
  controlthread.c - AR.Drone control thread
 
  Copyright (C) 2011 Hugo Perquin - http://blog.perquin.com
@@ -38,16 +38,13 @@
 #include "controls.h"
 #include "control_strategies/pid_strategy.h"
 
-
 pthread_t ctl_thread;
 
 struct drone_state_struct ds;
 
-
 struct control_strategy_struct control_strategy;
 
-int i=0;
-
+int i = 0;
 
 float motor[4];
 
@@ -61,12 +58,12 @@ void *ctl_thread_main(void* data);
 int ctl_Init(char *client_addr) {
 
 	LOAD_STRATEGY(control_strategy, pid_strategy);
-	
-	printf("%p %p %p \n", control_strategy.init, control_strategy.calculateMotorSpeeds, control_strategy.getLogText);
 
+	printf("%p %p %p \n", control_strategy.init,
+			control_strategy.calculateMotorSpeeds, control_strategy.getLogText);
 
 	int rc;
- 
+
 	//defaults from AR.Drone app:  pitch,roll max=12deg; yawspeed max=100deg/sec; height limit=on; vertical speed max=700mm/sec; 
 	ds.control_limits.pitch_roll_max = DEG2RAD(12); //degrees     
 	//control_limits.yawsp_max=DEG2RAD(100); //degrees/sec
@@ -80,7 +77,7 @@ int ctl_Init(char *client_addr) {
 	rc = att_Init(&ds.att);
 	if (rc)
 		return rc;
-		
+
 	rc = horizontal_velocities_init(&ds.hor_velocities);
 	if (rc)
 		return rc;
@@ -96,7 +93,7 @@ int ctl_Init(char *client_addr) {
 	rc = mot_Init();
 	if (rc)
 		return rc;
-		
+
 	control_strategy.init();
 
 	//start ctl thread 
@@ -109,48 +106,47 @@ int ctl_Init(char *client_addr) {
 	return 0;
 }
 
-
 void *ctl_thread_main(void* data) {
-	int cnt=0;
+	int cnt = 0;
 	int rc;
-	switchState(&ds,Landed);
+	switchState(&ds, Landed);
 
 	while (1) {
 		rc = att_GetSample(&ds.att);
 		if (!rc) {
-			horizontal_velocities_getSample(&ds.hor_velocities,&ds.att);
+			horizontal_velocities_getSample(&ds.hor_velocities, &ds.att);
 			break;
 		}
 		if (rc != 1)
 			printf("ctl_thread_main: att_GetSample return code=%d", rc);
-			
+
 	}
+	navLog_sendLogHeaders();
 
 	while (1) {
 		//get sample
 		while (1) {
 			rc = att_GetSample(&ds.att); //non blocking call
 			if (!rc) {
-				horizontal_velocities_getSample(&ds.hor_velocities,&ds.att);
+				horizontal_velocities_getSample(&ds.hor_velocities, &ds.att);
 				break;
 			}
 			if (rc != 1)
 				printf("ctl_thread_main: att_GetSample return code=%d", rc);
 		}
 
-                control_strategy.calculateMotorSpeeds(&ds, motor);
+		control_strategy.calculateMotorSpeeds(&ds, motor);
 
 		//send to motors
 		mot_Run(motor[0], motor[1], motor[2], motor[3]);
 
-		 
 		if ((cnt % 200) == 0) {
 			printf("SET ROLL %5.2f PITCH %5.2f YAW %5.2f   H %5.2f\n",
-					ds.setpoint.roll, ds.setpoint.pitch, ds.setpoint.yaw, ds.setpoint.h);
-			printf("ATT ROLL %5.2f PITCH %5.2f YAW %5.2f   H %5.2f\n", ds.att.roll,
-					ds.att.pitch, ds.att.yaw, ds.att.h);
+					ds.setpoint.roll, ds.setpoint.pitch, ds.setpoint.yaw,
+					ds.setpoint.h);
+			printf("ATT ROLL %5.2f PITCH %5.2f YAW %5.2f   H %5.2f\n",
+					ds.att.roll, ds.att.pitch, ds.att.yaw, ds.att.h);
 		}
-	
 
 		//blink leds    
 		cnt++;
@@ -164,9 +160,49 @@ void *ctl_thread_main(void* data) {
 		//yield to other threads
 		pthread_yield();
 	}
+	return NULL;
 }
 
 //logging
+
+void navLog_sendLogHeaders() {
+
+	char logbuf[MAX_LOGBUFSIZE];
+	int logbuflen;
+
+	logbuflen = snprintf(logbuf, MAX_LOGBUFSIZE, "cnt,"
+			"att.ts [s],"
+			"flyState,"
+			"att.ax [m/s^2],"
+			"att.ay [m/s^2],"
+			"att.az [m/s^2],"
+			"att.gx [deg/s],"
+			"att.gy [deg/s],"
+			"att.gz [deg/s],"
+			"att.hv [m/sec],"
+			"setpoint.h [m],"
+			"att.h [m],"
+			"motval_avg [frac],"
+			"setpoint.pitch [deg],"
+			"att.pitch [deg],"
+			"setpoint.roll [deg],"
+			"att.roll [deg],"
+			"setpoint.yaw [deg],"
+			"att.yaw [deg],"
+			"motval[0] [frac],"
+			"motval[1] [frac],"
+			"motval[2] [frac],"
+			"motval[3] [frac],"
+			"hor_velocities.xv,"
+			"hor_velocities.yv,"
+			"hor_velocities.dt,"
+			"hor_velocities.seqNum,");
+
+	logbuflen += control_strategy.getLogHeadings(logbuf + logbuflen,
+			MAX_LOGBUFSIZE - logbuflen);
+	udpClient_Send(&udpNavLog, logbuf, logbuflen);
+}
+
 void navLog_Send() {
 	char logbuf[MAX_LOGBUFSIZE];
 	int logbuflen;
@@ -175,43 +211,60 @@ void navLog_Send() {
 	mot_GetMot(motval);
 
 	logcnt++;
-	logbuflen = snprintf(logbuf,MAX_LOGBUFSIZE,
-			"%d,%f,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%ld"
-			//sequence+timestamp
-			, logcnt, ds.att.ts // navdata timestamp in sec
-			, ds.flyState
-			//sensor data
-			, ds.att.ax // acceleration x-axis in [m/s^2] front facing up is positive         
-			, ds.att.ay // acceleration y-axis in [m/s^2] left facing up is positive                
-			, ds.att.az // acceleration z-axis in [m/s^2] top facing up is positive             
-			, RAD2DEG(ds.att.gx) // gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive           
-			, RAD2DEG(ds.att.gy) // gyro value y-axis in [deg/sec] right turn, i.e. pitch down is positive                     
-			, RAD2DEG(ds.att.gz) // gyro value z-axis in [deg/sec] right turn, i.e. yaw left is positive 
-			, ds.att.hv // vertical speed [m/sec]
-			//height
-			, ds.setpoint.h // setpoint height
-			, ds.att.h // actual height above ground in [m] 
-			, (motval[0]+motval[1]+motval[2]+motval[3])/4 // throttle setting 0.00 - 1.00
-			//pitch
-			, RAD2DEG(ds.setpoint.pitch) //setpoint pitch [deg]
-			, RAD2DEG(ds.att.pitch) //actual pitch   
-			//roll
-			, RAD2DEG(ds.setpoint.roll) //setpoint roll [deg]
-			, RAD2DEG(ds.att.roll) //actual roll  
-			//yaw
-			, RAD2DEG(ds.setpoint.yaw) //yaw pitch [deg]
-			, RAD2DEG(ds.att.yaw) //actual yaw  
-			, motval[0]
-			, motval[1]
-			, motval[2]
-			, motval[3]
-			, ds.hor_velocities.xv
-			, ds.hor_velocities.yv
-			, ds.hor_velocities.dt
-			, ds.hor_velocities.seqNum
-			);
-			
-	logbuflen+=control_strategy.getLogText(logbuf+logbuflen,MAX_LOGBUFSIZE-logbuflen);
+	logbuflen =
+			snprintf(
+					logbuf,
+					MAX_LOGBUFSIZE,
+					"%d,%f,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%ld"
+					//sequence+timestamp
+					,
+					logcnt,
+					ds.att.ts // navdata timestamp in sec
+					,
+					ds.flyState
+					//sensor data
+					,
+					ds.att.ax // acceleration x-axis in [m/s^2] front facing up is positive
+					,
+					ds.att.ay // acceleration y-axis in [m/s^2] left facing up is positive
+					,
+					ds.att.az // acceleration z-axis in [m/s^2] top facing up is positive
+					,
+					RAD2DEG(ds.att.gx) // gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive
+					,
+					RAD2DEG(ds.att.gy) // gyro value y-axis in [deg/sec] right turn, i.e. pitch down is positive
+					,
+					RAD2DEG(ds.att.gz) // gyro value z-axis in [deg/sec] right turn, i.e. yaw left is positive
+					,
+					ds.att.hv // vertical speed [m/sec]
+					//height
+					,
+					ds.setpoint.h // setpoint height
+					,
+					ds.att.h // actual height above ground in [m]
+					,
+					(motval[0] + motval[1] + motval[2] + motval[3]) / 4 // throttle setting 0.00 - 1.00
+							//pitch
+							,
+					RAD2DEG(ds.setpoint.pitch) //setpoint pitch [deg]
+					,
+					RAD2DEG(ds.att.pitch) //actual pitch
+					//roll
+					,
+					RAD2DEG(ds.setpoint.roll) //setpoint roll [deg]
+					,
+					RAD2DEG(ds.att.roll) //actual roll
+					//yaw
+					,
+					RAD2DEG(ds.setpoint.yaw) //yaw pitch [deg]
+					,
+					RAD2DEG(ds.att.yaw) //actual yaw
+					, motval[0], motval[1], motval[2], motval[3],
+					ds.hor_velocities.xv, ds.hor_velocities.yv,
+					ds.hor_velocities.dt, ds.hor_velocities.seqNum);
+
+	logbuflen += control_strategy.getLogText(logbuf + logbuflen,
+			MAX_LOGBUFSIZE - logbuflen);
 	udpClient_Send(&udpNavLog, logbuf, logbuflen);
 }
 
@@ -251,5 +304,4 @@ void ctl_Close() {
 	mot_Close();
 	att_Close();
 }
-
 
