@@ -197,6 +197,8 @@ void *video_thread_main(void* data)
 
 int video_Init(struct vid_struct *vid)
 {
+        /** @todo launch dsp init script */
+
 	//start video thread 
 	int rc = pthread_create(&video_thread, NULL, video_thread_main, vid); 
 	if(rc) {
@@ -226,6 +228,7 @@ struct img_struct *video_CreateImage(struct vid_struct *vid)
 
 pthread_mutex_t video_grab_mutex = PTHREAD_MUTEX_INITIALIZER; 
 
+/** @todo this is not very performant, as we only get every second image at max */
 void video_GrabImage(struct vid_struct *vid, struct img_struct *img) {
 	pthread_mutex_lock(&video_grab_mutex);
 	vid->img = img;
