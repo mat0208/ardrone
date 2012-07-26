@@ -10,11 +10,17 @@ struct pid_struct pid_yaw;
 
 struct pid_struct pid_hor_vel_x;
 struct pid_struct pid_hor_vel_y;
+
+struct pid_struct pid_hor_pos_x;
+struct pid_struct pid_hor_pos_y;
+
 struct pid_struct pid_h;
 
+double targetXVel=0;
+double targetYVel=0;
 
-double targetRoll;
-double targetPitch;
+double targetRoll=0;
+double targetPitch=0;
 
 float adj_roll;
 float adj_pitch;
@@ -45,6 +51,9 @@ int launchRamp=0;
 int landRamp=0;
 
 
+double xPos;
+double yPos;
+
 struct setpoint_struct setpoint_landing={0,0,0,0.2};
 
 void pid_strategy_init()
@@ -58,6 +67,12 @@ void pid_strategy_init()
 	/** @todo these need an i-part */
 	pid_Init(&pid_hor_vel_x, 0.01, 0.0, 0, 0.1);
 	pid_Init(&pid_hor_vel_y, 0.01, 0.0, 0, 0.1);
+
+
+	/** @todo these need an i-part */
+	pid_Init(&pid_hor_pos_x, 1.0, 0.0, 0, 1);
+	pid_Init(&pid_hor_pos_y, 1.0, 0.0, 0, 1);
+
 	
 	pid_Init(&pid_h, 0.03, 0.01, 0, 0.1);
 	
@@ -73,11 +88,16 @@ void pidStrategy_calculateMotorSpeedsFlying(struct horizontal_velocities_struct 
         /* overwrite setpoints for now */
         targetRoll=setpoint->roll;
         targetPitch=setpoint->pitch;
+       
         
 
         if(1) {
-          targetRoll =pid_Calc(&pid_hor_vel_y, -hv->yv, -hv->dt);
-          targetPitch=pid_Calc(&pid_hor_vel_x, -hv->xv, -hv->dt);
+          targetXVel=pid_Calc(&pid_hor_pos_x, 0-xPos, att->dt);
+          targetYVel=pid_Calc(&pid_hor_pos_y, 0-yPos, att->dt);
+          
+        
+          targetRoll =pid_Calc(&pid_hor_vel_y, targetYVel-hv->yv, att->dt);
+          targetPitch=pid_Calc(&pid_hor_vel_x, targetXVel-hv->xv, att->dt);
         }   
 
 
@@ -116,8 +136,9 @@ void pid_strategy_calculateMotorSpeeds(struct drone_state_struct *cs, float moto
 		launchRamp++;
 		for(int i=0;i<4;i++) motorOut[i]=launchRamp*(MOTOR_TAKEOF_THROTTLE-MOTOR_INIT_THROTTLE)/LAUNCHRAMP_LENGTH+MOTOR_INIT_THROTTLE;
 
-
 		if (cs->att.h > 0 || launchRamp > LAUNCHRAMP_LENGTH) {
+    		        xPos=0;
+                        yPos=0;
 			launchRamp=0;
 			switchState(cs,Flying);
 		}
@@ -125,11 +146,16 @@ void pid_strategy_calculateMotorSpeeds(struct drone_state_struct *cs, float moto
 	  break;
 
 	  case Flying:
+	        xPos+=cs->hor_velocities.xv * cs->att.dt;
+                yPos+=cs->hor_velocities.yv * cs->att.dt;
+	                                    
 		pidStrategy_calculateMotorSpeedsFlying(&cs->hor_velocities, &cs->att,setpoint,&cs->control_limits,motorOut);
 		if (setpoint->h < 0.1) switchState(cs,Landing);
 	  break;
 
 	  case Landing:
+	        xPos=0;
+	        yPos=0;
 		if (cs->att.h > LANDING_HEIGHT_START_RAMP) {
 			pidStrategy_calculateMotorSpeedsFlying(&cs->hor_velocities, &cs->att,setpoint,&cs->control_limits,motorOut);
 		} else if (landRamp< LANDRAMP_LENGTH) {
@@ -153,6 +179,10 @@ unsigned int pid_strategy_getLogHeadings(char *buf, unsigned int maxLen)
 {
   int len;
   len= snprintf(buf,maxLen, 
+        "xPos,"
+        "yPos,"
+        "targetXVel,"
+        "targetYVel,"
         "targetPitch,"
         "targetRoll,"
         "adj_pitch,"
@@ -167,7 +197,11 @@ unsigned int pid_strategy_getLogText(char *buf,unsigned int maxLen)
 {
   int len;
   len= snprintf(buf,maxLen,
-        "%f,%f,%f,%f,%f,%f,"
+        "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,"
+        ,xPos
+        ,yPos
+        ,targetXVel
+        ,targetYVel
         ,targetPitch
         ,targetRoll
         ,adj_pitch
