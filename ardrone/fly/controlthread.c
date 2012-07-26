@@ -118,7 +118,7 @@ void *ctl_thread_main(void* data) {
 			break;
 		}
 		if (rc != 1)
-			printf("ctl_thread_main: att_GetSample return code=%d", rc);
+			printf("ctl_thread_main: att_GetSample return code=%d\n", rc);
 
 	}
 	navLog_sendLogHeaders();
@@ -132,7 +132,7 @@ void *ctl_thread_main(void* data) {
 				break;
 			}
 			if (rc != 1)
-				printf("ctl_thread_main: att_GetSample return code=%d", rc);
+				printf("ctl_thread_main: att_GetSample return code=%d\n", rc);
 		}
 
 		control_strategy.calculateMotorSpeeds(&ds, motor);
