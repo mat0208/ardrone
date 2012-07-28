@@ -1,5 +1,6 @@
 #include "pid.h"
 #include "../controls.h"
+#include "../../util/util.h"
 #include "pid_strategy.h"
 #include <stdio.h>
 
@@ -45,9 +46,9 @@ int launchRamp=0;
 // throttle for landing part below min flight height (now height info)
 #define MOTOR_LAND_MAX_THROTTLE  0.50
 // ramp end throttle
-#define MOTOR_LAND_MIN_THROTTLE 0.2
+#define MOTOR_LAND_MIN_THROTTLE 0.1
 /** ramp progress while landing*/
-#define LANDRAMP_LENGTH 600 // 200 ^= 1 second
+#define LANDRAMP_LENGTH 300 // 200 ^= 1 second
 int landRamp=0;
 
 
@@ -65,13 +66,13 @@ void pid_strategy_init()
 	pid_Init(&pid_yaw, 0.1, 0, 0, 0);
 	
 	/** @todo these need an i-part */
-	pid_Init(&pid_hor_vel_x, 0.01, 0.0, 0, 0.1);
-	pid_Init(&pid_hor_vel_y, 0.01, 0.0, 0, 0.1);
+	pid_Init(&pid_hor_vel_x, 0.2, 0.01, 0, 0.1);
+	pid_Init(&pid_hor_vel_y, 0.2, 0.01, 0, 0.1);
 
 
 	/** @todo these need an i-part */
-	pid_Init(&pid_hor_pos_x, 1.0, 0.0, 0, 1);
-	pid_Init(&pid_hor_pos_y, 1.0, 0.0, 0, 1);
+	pid_Init(&pid_hor_pos_x, 5.0, 0.0, 0, 1);
+	pid_Init(&pid_hor_pos_y, 5.0, 0.0, 0, 1);
 
 	
 	pid_Init(&pid_h, 0.03, 0.01, 0, 0.1);
@@ -96,8 +97,8 @@ void pidStrategy_calculateMotorSpeedsFlying(struct horizontal_velocities_struct 
           targetYVel=pid_Calc(&pid_hor_pos_y, 0-yPos, att->dt);
           
         
-          targetRoll =pid_Calc(&pid_hor_vel_y, targetYVel-hv->yv, att->dt);
           targetPitch=pid_Calc(&pid_hor_vel_x, targetXVel-hv->xv, att->dt);
+          targetRoll =pid_Calc(&pid_hor_vel_y, targetYVel-hv->yv, att->dt);
         }   
 
 
@@ -179,12 +180,13 @@ unsigned int pid_strategy_getLogHeadings(char *buf, unsigned int maxLen)
 {
   int len;
   len= snprintf(buf,maxLen, 
+        ","
         "xPos,"
         "yPos,"
         "targetXVel,"
         "targetYVel,"
-        "targetPitch,"
-        "targetRoll,"
+        "targetPitch [deg],"
+        "targetRoll [deg],"
         "adj_pitch,"
         "adj_roll,"
         "adj_yaw,"
@@ -197,13 +199,13 @@ unsigned int pid_strategy_getLogText(char *buf,unsigned int maxLen)
 {
   int len;
   len= snprintf(buf,maxLen,
-        "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,"
+        ",%f,%f,%f,%f,%f,%f,%f,%f,%f,%f"
         ,xPos
         ,yPos
         ,targetXVel
         ,targetYVel
-        ,targetPitch
-        ,targetRoll
+        ,RAD2DEG(targetPitch)
+        ,RAD2DEG(targetRoll)
         ,adj_pitch
         ,adj_roll
         ,adj_yaw

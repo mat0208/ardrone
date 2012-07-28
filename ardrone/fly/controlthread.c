@@ -196,7 +196,7 @@ void navLog_sendLogHeaders() {
 			"hor_velocities.xv,"
 			"hor_velocities.yv,"
 			"hor_velocities.dt,"
-			"hor_velocities.seqNum,");
+			"hor_velocities.seqNum");
 
 	logbuflen += control_strategy.getLogHeadings(logbuf + logbuflen,
 			MAX_LOGBUFSIZE - logbuflen);
