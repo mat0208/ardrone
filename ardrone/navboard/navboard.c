@@ -380,6 +380,18 @@ FF1 Delay 2 seconds after sending FFs
 	//init nav structure	
     nav->ts = util_timestamp();
     nav->dt = 0;
+    
+        int i=0;
+        while(i<100) {
+          int rc;
+          struct nav_struct nav;
+
+          rc=nav_GetSample(&nav);
+          if(rc==0) break;
+          // read a byte to change the phase
+          safe_read(nav_fd, &rc, 1);
+        
+        }
 	
 	return 0;
 }
