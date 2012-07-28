@@ -26,10 +26,11 @@ int main(int argc, char *argv[]) {
 	struct vbat_struct vbat;
 
 	if(vbat_init(&vbat)) return 1;
-
+	
 	while(1) {
 		vbat_read(&vbat);
-		printf("Vbat=%5.2fV\n",vbat.vbat);
+ 		printf("Vbat=%5.2fV\n",vbat.vbat);
+ 		if (argc <=1) break;
 		usleep(1000000);
 	}
 
