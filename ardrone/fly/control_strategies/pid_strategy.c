@@ -91,7 +91,7 @@ void pidStrategy_calculateMotorSpeedsFlying(struct horizontal_velocities_struct 
        
         
 
-        if(1) {
+        if(0) {
           targetXVel=pid_Calc(&pid_hor_pos_x, 0-xPos, att->dt);
           targetYVel=pid_Calc(&pid_hor_pos_y, 0-yPos, att->dt);
           

@@ -125,6 +125,7 @@ void *ctl_thread_main(void* data) {
 
 	while (1) {
 		//get sample
+		double stop, start = util_timestamp();
 		while (1) {
 			rc = att_GetSample(&ds.att); //non blocking call
 			if (!rc) {
@@ -158,6 +159,8 @@ void *ctl_thread_main(void* data) {
 		navLog_Send();
 
 		//yield to other threads
+		stop = util_timestamp();
+		printf("ctl_thread_main loop iteration took: %f ms\n", (stop - start)*1000);
 		pthread_yield();
 	}
 	return NULL;

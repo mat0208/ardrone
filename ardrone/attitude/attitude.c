@@ -80,13 +80,13 @@ struct ars_Gyro1DKalman ars_pitch;
 //roll angle from acc in radians
 float roll(float a_z, float a_y)
 {
-	return atan2(a_y, a_z);
+	return atan2(a_y, -a_z);
 }
 
 //pitch angle from acc in radians
 float pitch(float a_z, float a_x)
 {
-	return -atan2(a_x, a_z);
+	return atan2(a_x, -a_z);
 }
 
 void att_Print(struct att_struct *att)
@@ -133,16 +133,16 @@ int att_GetSample(struct att_struct *att)
 	att->gx = nav.gx;
 	att->gy = nav.gy;
 	att->gz = nav.gz;
-  att->hraw = nav.h;
+        att->hraw = nav.h;
  	att->h_meas  = nav.h_meas;
- 
-  //smooth out missing h samples
-  if(abs(nav.h-last_h)>5 && last_ts-nav.ts<0.10) {
-    att->h = last_h;
-  }else{  
-	  att->h  = nav.h;
-    last_h = nav.h;
-    last_ts = nav.ts;
+
+ 	//smooth out missing h samples
+ 	if(abs(nav.h-last_h)>5 && last_ts-nav.ts<0.10) {
+        	att->h = last_h;
+        } else {  
+	att->h  = nav.h;
+	last_h = nav.h;
+	last_ts = nav.ts;
   }
   if(nav.h_meas) {
     att->hv= lr_slope(att->h)*25; //25Hz sample rate

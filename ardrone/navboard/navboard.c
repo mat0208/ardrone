@@ -99,31 +99,37 @@ int nav_GetSample(struct nav_struct* nav)
 	nav->dt = nav->ts - ts_prev;
 	
 	//store converted sensor data in nav structure. 
-	nav->ax = (((float)nav->acc[0]) - accs_offset[0]) / accs_gains[0];
+	nav->ax = -(((float)nav->acc[0]) - accs_offset[0]) / accs_gains[0];
 	nav->ay = (((float)nav->acc[1]) - accs_offset[1]) / accs_gains[1];
-	nav->az = (((float)nav->acc[2]) - accs_offset[2]) / accs_gains[2];
-	
-	
+	nav->az = -(((float)nav->acc[2]) - accs_offset[2]) / accs_gains[2];
+
+
 	nav->gx = (((float)nav->gyro[0]) - gyros_offset[0]) * gyros_gains[0];
 	nav->gy = (((float)nav->gyro[1]) - gyros_offset[1]) * gyros_gains[1];
 	nav->gz = (((float)nav->gyro[2]) - gyros_offset[2]) * gyros_gains[2];	
-	
+
 	nav->mag_x = (((float)nav->mag[0]) - mag_offset[0]) * mag_gains[0];
 	nav->mag_y = (((float)nav->mag[1]) - mag_offset[1]) * mag_gains[1];
 	nav->mag_z = (((float)nav->mag[2]) - mag_offset[2]) * mag_gains[2];	
-	
 
 
 	nav->h  = (float)((nav->us_echo&0x7fff)) * 0.000340;
         nav->h_meas = nav->us_echo >> 15;
-	
+
 	return 0;
 }
 
 void nav_Print(struct nav_struct* nav) 
 {
-
-	printf("RAW seq=%d a=%5d,%5d,%5d g=%5d,%5d,%5d unk=%5d,%5d h=%5d \nmag=%5d,%5d,%5d\n"
+                
+	fprintf(stderr,
+	        "%d,%.3f,%.3f,%.3f,%.2f,%.2f,%.2f,%d,%d,%d\n"
+		,nav->seq
+		,RAD2DEG(nav->gx), RAD2DEG(nav->gy), RAD2DEG(nav->gz)
+		,nav->ax, nav->ay, nav->az
+		,nav->mag[0],nav->mag[1],nav->mag[2]);
+		
+        printf("RAW seq=%d a=%5d,%5d,%5d g=%5d,%5d,%5d unk=%5d,%5d h=%5d \nmag=%5d,%5d,%5d\n"
 		,nav->seq
 		,nav->acc[0],nav->acc[1],nav->acc[2]
 		,nav->gyro[0],nav->gyro[1],nav->gyro[2]
@@ -142,7 +148,6 @@ void nav_Print(struct nav_struct* nav)
 		,nav->dt*1000
 	);
 }
-
 
 //calibrate offsets. Drone has to be horizontal and stationary
 //TODO add timeout
@@ -378,8 +383,8 @@ FF1 Delay 2 seconds after sending FFs
 	write(nav_fd,&cmd,1);
   
 	//init nav structure	
-    nav->ts = util_timestamp();
-    nav->dt = 0;
+	nav->ts = util_timestamp();
+	nav->dt = 0;
 	
 	return 0;
 }
