@@ -62,8 +62,6 @@ int ctl_Init(char *client_addr) {
 	printf("%p %p %p \n", control_strategy.init,
 			control_strategy.calculateMotorSpeeds, control_strategy.getLogText);
 
-	int rc;
-
 	//defaults from AR.Drone app:  pitch,roll max=12deg; yawspeed max=100deg/sec; height limit=on; vertical speed max=700mm/sec; 
 	ds.control_limits.pitch_roll_max = DEG2RAD(12); //degrees     
 	//control_limits.yawsp_max=DEG2RAD(100); //degrees/sec
@@ -74,7 +72,7 @@ int ctl_Init(char *client_addr) {
 	ds.control_limits.throttle_max = 0.85;
 
 	//Attitude Estimate
-	rc = att_Init(&ds.att);
+	int rc = att_Init(&ds.att);
 	if (rc)
 		return rc;
 
@@ -85,6 +83,7 @@ int ctl_Init(char *client_addr) {
 	//udp logger
 	if (client_addr) {
 		udpClient_Init(&udpNavLog, client_addr, 7778);
+		navLog_sendLogHeaders();
 		navLog_Send();
 		printf("udpClient_Init %d\n", rc);
 	}
@@ -121,7 +120,6 @@ void *ctl_thread_main(void* data) {
 			printf("ctl_thread_main: att_GetSample return code=%d\n", rc);
 
 	}
-	navLog_sendLogHeaders();
 
 	while (1) {
 		//get sample
@@ -180,7 +178,11 @@ void navLog_sendLogHeaders() {
 			"att.ay [m/s^2],"
 			"att.az [m/s^2],"
 			"att.gx [deg/s],"
+			"att.gx_kalman [deg/s],"
+			"att.gx_bias_kalman [deg/s],"
 			"att.gy [deg/s],"
+			"att.gy_kalman [deg/s],"
+			"att.gy_bias_kalman [deg/s],"
 			"att.gz [deg/s],"
 			"att.hv [m/sec],"
 			"setpoint.h [m],"
@@ -232,10 +234,12 @@ void navLog_Send() {
 					ds.att.ay // acceleration y-axis in [m/s^2] left facing up is positive
 					,
 					ds.att.az // acceleration z-axis in [m/s^2] top facing up is positive
-					,
-					RAD2DEG(ds.att.gx) // gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive
-					,
-					RAD2DEG(ds.att.gy) // gyro value y-axis in [deg/sec] right turn, i.e. pitch down is positive
+					,RAD2DEG(ds.att.gx) // gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive
+					,RAD2DEG(ds.att.gx_kalman) // filtered gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive
+					,RAD2DEG(ds.att.gx_bias_kalman) // estimated bias of gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive
+					,RAD2DEG(ds.att.gy) // gyro value y-axis in [deg/sec] right turn, i.e. pitch down is positive
+					,RAD2DEG(ds.att.gy_kalman) // filtered gyro value y-axis in [deg/sec] right turn, i.e. pitch down is positive
+					,RAD2DEG(ds.att.gy_bias_kalman) // estimated bias of gyro value y-axis in [deg/sec] right turn, i.e. pitch down is positive
 					,
 					RAD2DEG(ds.att.gz) // gyro value z-axis in [deg/sec] right turn, i.e. yaw left is positive
 					,

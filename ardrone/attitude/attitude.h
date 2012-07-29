@@ -55,6 +55,14 @@ struct att_struct {
     float gx; // gyro value x-axis in [rad/sec] right turn, i.e. roll right is positive
     float gy; // gyro value y-axis in [rad/sec] right turn, i.e. pirch down is positive
     float gz; // gyro value z-axis in [rad/sec] right turn, i.e. yaw left is positive
+
+
+    float gx_kalman; // filtered gyro value x-axis in [rad/sec] right turn, i.e. roll right is positive
+    float gx_bias_kalman;  // estimated bias for gyro value x-axis in [rad/sec] right turn, i.e. roll right is positive
+    float gy_kalman; // filtered gyro value y-axis in [rad/sec] right turn, i.e. pirch down is positive
+    float gy_bias_kalman; // estimated bias for gyro value y-axis in [rad/sec] right turn, i.e. pirch down is positive
+
+
 };
 
 int att_Init(struct att_struct *att);
