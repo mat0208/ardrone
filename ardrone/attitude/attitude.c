@@ -67,7 +67,6 @@ float lr_slope(float y) {
 	return (sxy - lr_a * sy) / lr_b;
 }
 
-struct nav_struct nav;
 struct ars_Gyro1DKalman ars_roll;
 struct ars_Gyro1DKalman ars_pitch;
 
@@ -96,74 +95,43 @@ int att_GetSample(struct att_struct *att) {
 	int rc;
 
 	//get nav sample
-	rc = nav_GetSample(&nav);
+	rc = nav_GetSample(&att->navdata);
 	if (rc)
 		return rc;
-	/*
-	 //get nav sample
-	 double starttime=-1;
-	 while(1) {
-	 rc = nav_GetSample(&nav);
-	 if(!rc) break;
-	 if(starttime<0) starttime=util_timestamp();
-	 if(util_timestamp()-starttime>=0.100) return rc;
-	 }
-	 */
-	//DEBUG introduce bias
-	//nav.gx += att->dt * 10;
-	//nav.gy -= att->dt * 20;
-	//update dt and copy nav data
-	att->dt = nav.ts - att->ts;
-	att->ts = nav.ts;
-	att->ax = nav.ax;
-	att->ay = nav.ay;
-	att->az = nav.az;
-	att->gx = nav.gx;
-	att->gy = nav.gy;
-	att->gz = nav.gz;
-	att->hraw = nav.h;
-	att->h_meas = nav.h_meas;
+
+	att->dt=att->navdata.dt;
 
 	//smooth out missing h samples
-	if (abs(nav.h - last_h) > 0.05 && last_ts - nav.ts < 0.10) {
+	if (abs(att->navdata.h - last_h) > 0.05 && last_ts - att->navdata.ts < 0.10) {
 		att->h = last_h;
 	} else {
-		att->h = nav.h;
-		last_h = nav.h;
-		last_ts = nav.ts;
+		att->h = att->navdata.h;
+		last_h = att->navdata.h;
+		last_ts = att->navdata.ts;
 	}
-	if (nav.h_meas) {
+	if (att->navdata.h_meas) {
 		att->hv = lr_slope(att->h) * 25; //25Hz sample rate
 	}
 
 	//update att
-	att->roll_g += nav.gx * att->dt;
-	att->pitch_g += nav.gy * att->dt;
-	att->yaw += nav.gz * att->dt;
-	att->roll_a = roll(nav.az, nav.ay);
-	att->pitch_a = pitch(nav.az, nav.ax);
+	att->roll_g += att->navdata.gx * att->dt;
+	att->pitch_g += att->navdata.gy * att->dt;
+	att->yaw += att->navdata.gz * att->dt;
+	att->roll_a = roll(att->navdata.az, att->navdata.ay);
+	att->pitch_a = pitch(att->navdata.az, att->navdata.ax);
 
 	//execute kalman roll filter
-	ars_predict(&ars_roll, nav.gx, att->dt);
+	ars_predict(&ars_roll, att->navdata.gx, att->dt);
 	att->roll = ars_update(&ars_roll, att->roll_a);
 	att->gx_kalman = ars_roll.x_angle;
 	att->gx_bias_kalman = ars_roll.x_bias;
 
 	//execute kalman pitch filter
-	ars_predict(&ars_pitch, nav.gy, att->dt);
+	ars_predict(&ars_pitch, att->navdata.gy, att->dt);
 	att->pitch = ars_update(&ars_pitch, att->pitch_a);
 	att->gy_kalman = ars_pitch.x_angle;
 	att->gy_bias_kalman = ars_pitch.x_bias;
 
-	/*
-	 //DEBUG print bias
-	 printf("roll=%5.1f roll_a=%5.1f roll_g=%5.1f bias=%5.1f gx=%5.1f dt=%5.1f\n"
-	 ,att->roll/3.1415926*180, att->roll_a/3.1415926*180, att->roll_g/3.1415926*180
-	 ,ars_roll.x_bias/3.1415926*180
-	 ,nav.gx/3.1415926*180
-	 ,att->dt*1000
-	 );
-	 */
 	return 0;
 }
 
@@ -190,7 +158,6 @@ int att_FlatTrim(struct att_struct *att) {
 	att->roll = 0;
 	att->yaw = 0;
 	att->h = 0;
-	att->ts = util_timestamp();
 	att->dt = 0;
 
 	return rc;
@@ -203,15 +170,15 @@ int att_Init(struct att_struct *att) {
 
 	//nav board
 	printf("Init Navboard ...\n");
-	rc = nav_Init(&nav);
+	rc = nav_Init(&att->navdata);
 	if (rc)
 		return rc;
 
-	rc = nav_GetSample(&nav);
+	rc = nav_GetSample(&att->navdata);
 	if (rc)
 		return rc;
-	last_ts = nav.ts;
-	last_h = nav.h;
+	last_ts = att->navdata.ts;
+	last_h = att->navdata.h;
 
 	printf("Init Navboard OK\n");
 
@@ -221,5 +188,53 @@ int att_Init(struct att_struct *att) {
 
 void att_Close() {
 	nav_Close();
+}
+
+unsigned int att_getLogHeadings(char *buf, unsigned int maxLen) {
+	int len;
+	len = snprintf(buf, maxLen, ","
+			"att.ts [s],"
+			"att.ax [m/s^2],"
+			"att.ay [m/s^2],"
+			"att.az [m/s^2],"
+			"att.gx [deg/s],"
+			"att.gx_kalman [deg/s],"
+			"att.gx_bias_kalman [deg/s],"
+			"att.gy [deg/s],"
+			"att.gy_kalman [deg/s],"
+			"att.gy_bias_kalman [deg/s],"
+			"att.gz [deg/s],"
+			"att.hv [m/sec],"
+			"att.h [m],"
+			"att.pitch [deg],"
+			"att.roll [deg],"
+			"att.yaw [deg]");
+	return len;
+}
+
+unsigned int att_getLogText(struct att_struct *att, char *buf, unsigned int maxLen) {
+	int len;
+	len= snprintf(buf,maxLen,
+			",%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f"
+			,att->navdata.ts // navdata timestamp in sec
+			,att->navdata.ax// acceleration x-axis in [m/s^2] front facing up is positive
+			,att->navdata.ay// acceleration y-axis in [m/s^2] left facing up is positive
+			,att->navdata.az// acceleration z-axis in [m/s^2] top facing up is positive
+			,RAD2DEG(att->navdata.gx)// gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive
+			,RAD2DEG(att->gx_kalman)// filtered gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive
+			,RAD2DEG(att->gx_bias_kalman)// estimated bias of gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive
+			,RAD2DEG(att->navdata.gy)// gyro value y-axis in [deg/sec] right turn, i.e. pitch down is positive
+			,RAD2DEG(att->gy_kalman)// filtered gyro value y-axis in [deg/sec] right turn, i.e. pitch down is positive
+			,RAD2DEG(att->gy_bias_kalman)// estimated bias of gyro value y-axis in [deg/sec] right turn, i.e. pitch down is positive
+			,RAD2DEG(att->navdata.gz)// gyro value z-axis in [deg/sec] right turn, i.e. yaw left is positive
+			,att->hv// vertical speed [m/sec]
+			,att->h// actual height above ground in [m]
+			,RAD2DEG(att->pitch)//actual pitch
+			,RAD2DEG(att->roll)//actual roll
+			,RAD2DEG(att->yaw)//actual yaw
+
+	);
+	return len;
+
 }
 

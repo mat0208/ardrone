@@ -104,9 +104,9 @@ void pidStrategy_calculateMotorSpeedsFlying(struct horizontal_velocities_struct 
 
 
 	//flying, calc pid controller corrections
-	adj_roll  = pid_CalcD(&pid_roll,  targetRoll  - att->roll , att->dt, att->gx); //err positive = need to roll right
-	adj_pitch = pid_CalcD(&pid_pitch, targetPitch - att->pitch, att->dt, att->gy); //err positive = need to pitch down
-	adj_yaw   = pid_CalcD(&pid_yaw,   setpoint->yaw   - att->yaw,   att->dt, att->gz); //err positive = need to increase yaw to the left
+	adj_roll  = pid_CalcD(&pid_roll,  targetRoll  - att->roll , att->dt, att->gx_kalman); //err positive = need to roll right
+	adj_pitch = pid_CalcD(&pid_pitch, targetPitch - att->pitch, att->dt, att->gy_kalman); //err positive = need to pitch down
+	adj_yaw   = pid_CalcD(&pid_yaw,   setpoint->yaw   - att->yaw,   att->dt, att->navdata.gz); //err positive = need to increase yaw to the left
 	adj_h     = pid_CalcD(&pid_h,     setpoint->h     - att->h,     att->dt, att->hv); //err positive = need to increase height
 
 	throttle = control_limits->throttle_hover + adj_h;
