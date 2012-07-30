@@ -1,6 +1,7 @@
 import numpy as N
 from math import *
-from re import *
+import re
+import csv
 
 def integrate(ts):
     sum=0
@@ -32,143 +33,45 @@ def deg2Rad(d):
 def rad2Deg(d):
     return d*180/pi
 
-def read_droneAngs(filename):
-    ax=[]
-    ay=[]
-    az=[]
-    gx=[]
-    gy=[]
-    gz=[]
-    mx=[]
-    my=[]
-    mz=[]
-    
-    arrs=[ax,ay,az,gx,gy,gz,mx,my,mz]
-        
+def readCsv(filename):
 
-    first=True
-    for line in open(filename, 'r'):
-        if first:
-            first=False
+    class ListCollection:
+        def names(self):
+            return self.__dict__.keys()
+
+    def removeUnits(row):
+        return [ re.sub('\[.*\]', '', text).strip() for text in row ]
+    
+    lc=ListCollection()
+    import csv
+
+    usedNames=dict()
+
+    csvFile  = open(filename, 'rb')
+    reader = csv.reader(csvFile)
+
+    rownum = 0
+
+    for row in reader:
+        if rownum == 0:
+            header = removeUnits(row)
+            for head in header:
+                if head in usedNames:
+                    raise Exception('Duplicate header \'{}\''.format(head))
+                lc.__dict__[head]=[]
+                usedNames[head]=1
         else:
-            fields = line.strip().split(',')
-            for i, number in enumerate(fields):
-                arrs[i].append(float(number))
+            colnum = 0
+            for col in row:
+                colname=header[colnum]
+                lc.__dict__[colname].append(float(col))
+                colnum += 1
+        rownum += 1
 
-    return arrs
-
-def read_seqDroneAngs(filename):
-    seq=[]
-    ax=[]
-    ay=[]
-    az=[]
-    gx=[]
-    gy=[]
-    gz=[]
-    mx=[]
-    my=[]
-    mz=[]
-    
-    arrs=[seq,gx,gy,gz,ax,ay,az,mx,my,mz]
-        
-
-    first=True
-    for line in open(filename, 'r'):
-        if first:
-            first=False
-        else:
-            fields = line.strip().split(',')
-            for i, number in enumerate(fields):
-                arrs[i].append(float(number))
-
-    return arrs
-
-def read_rawDroneAngs(filename):
-    ax=[]
-    ay=[]
-    az=[]
-    
-    arrs=[ax,ay,az]
-        
-
-    first=True
-    for line in open(filename, 'r'):
-        if first:
-            first=False
-        else:
-            fields = line.strip().split(',')
-            for i, number in enumerate(fields):
-                arrs[i].append(float(number))
-
-    return arrs
+    csvFile.close
+    return lc
 
 
 
-def read_fullDroneLog(filename):
-    nr=[]
-    time=[]
-    flyState=[]
-    ax=[]
-    ay=[]
-    az=[]
-    gx=[]
-    gy=[]
-    gz=[]
-    height_speed=[]
-    set_h=[]
-    height=[]
-    throttle=[]
-    set_pitch=[]
-    pitch=[]
-    set_roll=[]
-    roll=[]
-    set_yaw=[]
-    yaw=[]
-    motval_0=[]
-    motval_1=[]
-    motval_2=[]
-    motval_3=[]
-    hor_xv=[]
-    hor_yv=[]
-    hor_dt=[]
-    hor_seqNum=[]
-    xPos=[]
-    yPos=[]
-    targetXVel=[]
-    targetYVel=[]
-    targetPitch=[]
-    targetRoll=[]
-    adj_pitch=[]
-    adj_roll=[]
-    adj_yaw=[]
-    adj_h=[]
-    
 
-    
-    arrs=[nr,time,flyState,ax,ay,az,gx,gy,gz,
-        height_speed,set_h,height,throttle,set_pitch,pitch,
-        set_roll,roll,set_yaw,yaw,
-        motval_0, motval_1, motval_2,motval_3,
-        hor_xv,hor_yv, hor_dt,hor_seqNum,
-        xPos,yPos,
-        targetXVel,targetYVel,
-        targetPitch, targetRoll,
-        adj_pitch, adj_roll, adj_yaw, adj_h
-    ]
-        
 
-    first=True
-    for line in open(filename, 'r'):
-        if first:
-            first=False
-        else:
-            fields = line.strip().split(',')
-            for i, number in enumerate(fields):
-                if number!="":
-                  try:
-                      arrs[i].append(float(number))
-                  except ValueError:
-                      arrs[i].append(0);
-                      
-
-    return arrs

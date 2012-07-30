@@ -62,8 +62,6 @@ int ctl_Init(char *client_addr) {
 	printf("%p %p %p \n", control_strategy.init,
 			control_strategy.calculateMotorSpeeds, control_strategy.getLogText);
 
-	int rc;
-
 	//defaults from AR.Drone app:  pitch,roll max=12deg; yawspeed max=100deg/sec; height limit=on; vertical speed max=700mm/sec; 
 	ds.control_limits.pitch_roll_max = DEG2RAD(12); //degrees     
 	//control_limits.yawsp_max=DEG2RAD(100); //degrees/sec
@@ -74,7 +72,7 @@ int ctl_Init(char *client_addr) {
 	ds.control_limits.throttle_max = 0.85;
 
 	//Attitude Estimate
-	rc = att_Init(&ds.att);
+	int rc = att_Init(&ds.att);
 	if (rc)
 		return rc;
 
@@ -85,6 +83,7 @@ int ctl_Init(char *client_addr) {
 	//udp logger
 	if (client_addr) {
 		udpClient_Init(&udpNavLog, client_addr, 7778);
+		navLog_sendLogHeaders();
 		navLog_Send();
 		printf("udpClient_Init %d\n", rc);
 	}
@@ -121,10 +120,10 @@ void *ctl_thread_main(void* data) {
 			printf("ctl_thread_main: att_GetSample return code=%d\n", rc);
 
 	}
-	navLog_sendLogHeaders();
 
 	while (1) {
 		//get sample
+		double stop, start = util_timestamp();
 		while (1) {
 			rc = att_GetSample(&ds.att); //non blocking call
 			if (!rc) {
@@ -158,11 +157,13 @@ void *ctl_thread_main(void* data) {
 		navLog_Send();
 
 		//yield to other threads
-		pthread_yield();
-	}
-	return NULL;
+		stop = util_timestamp();
+		printf("ctl_thread_main loop iteration took: %f ms\n",
+				( stop - start)* 1000);
+		pthread_yield ()
+	;}
+return NULL;
 }
-
 //logging
 
 void navLog_sendLogHeaders() {
@@ -171,24 +172,12 @@ void navLog_sendLogHeaders() {
 	int logbuflen;
 
 	logbuflen = snprintf(logbuf, MAX_LOGBUFSIZE, "cnt,"
-			"att.ts [s],"
 			"flyState,"
-			"att.ax [m/s^2],"
-			"att.ay [m/s^2],"
-			"att.az [m/s^2],"
-			"att.gx [deg/s],"
-			"att.gy [deg/s],"
-			"att.gz [deg/s],"
-			"att.hv [m/sec],"
 			"setpoint.h [m],"
-			"att.h [m],"
-			"motval_avg [frac],"
 			"setpoint.pitch [deg],"
-			"att.pitch [deg],"
 			"setpoint.roll [deg],"
-			"att.roll [deg],"
 			"setpoint.yaw [deg],"
-			"att.yaw [deg],"
+			"motval_avg [frac],"
 			"motval[0] [frac],"
 			"motval[1] [frac],"
 			"motval[2] [frac],"
@@ -197,9 +186,8 @@ void navLog_sendLogHeaders() {
 			"hor_velocities.yv,"
 			"hor_velocities.dt,"
 			"hor_velocities.seqNum");
-
-	logbuflen += control_strategy.getLogHeadings(logbuf + logbuflen,
-			MAX_LOGBUFSIZE - logbuflen);
+	logbuflen += att_getLogHeadings(logbuf + logbuflen, MAX_LOGBUFSIZE - logbuflen);
+	logbuflen += control_strategy.getLogHeadings(logbuf + logbuflen, MAX_LOGBUFSIZE - logbuflen);
 	udpClient_Send(&udpNavLog, logbuf, logbuflen);
 }
 
@@ -211,97 +199,60 @@ void navLog_Send() {
 	mot_GetMot(motval);
 
 	logcnt++;
-	logbuflen =
-			snprintf(
-					logbuf,
-					MAX_LOGBUFSIZE,
-					"%d,%f,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%ld"
-					//sequence+timestamp
-					,
-					logcnt,
-					ds.att.ts // navdata timestamp in sec
-					,
-					ds.flyState
-					//sensor data
-					,
-					ds.att.ax // acceleration x-axis in [m/s^2] front facing up is positive
-					,
-					ds.att.ay // acceleration y-axis in [m/s^2] left facing up is positive
-					,
-					ds.att.az // acceleration z-axis in [m/s^2] top facing up is positive
-					,
-					RAD2DEG(ds.att.gx) // gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive
-					,
-					RAD2DEG(ds.att.gy) // gyro value y-axis in [deg/sec] right turn, i.e. pitch down is positive
-					,
-					RAD2DEG(ds.att.gz) // gyro value z-axis in [deg/sec] right turn, i.e. yaw left is positive
-					,
-					ds.att.hv // vertical speed [m/sec]
-					//height
-					,
-					ds.setpoint.h // setpoint height
-					,
-					ds.att.h // actual height above ground in [m]
-					,
-					(motval[0] + motval[1] + motval[2] + motval[3]) / 4 // throttle setting 0.00 - 1.00
-							//pitch
-							,
-					RAD2DEG(ds.setpoint.pitch) //setpoint pitch [deg]
-					,
-					RAD2DEG(ds.att.pitch) //actual pitch
-					//roll
-					,
-					RAD2DEG(ds.setpoint.roll) //setpoint roll [deg]
-					,
-					RAD2DEG(ds.att.roll) //actual roll
-					//yaw
-					,
-					RAD2DEG(ds.setpoint.yaw) //yaw pitch [deg]
-					,
-					RAD2DEG(ds.att.yaw) //actual yaw
-					, motval[0], motval[1], motval[2], motval[3],
-					ds.hor_velocities.xv, ds.hor_velocities.yv,
-					ds.hor_velocities.dt, ds.hor_velocities.seqNum);
+	logbuflen = snprintf(
+			logbuf,
+			MAX_LOGBUFSIZE,
+			"%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%ld"
+			, logcnt
+			, ds.flyState
+			, ds.setpoint.h// setpoint height
+			,RAD2DEG(ds.setpoint.pitch) //setpoint pitch [deg]
+			,RAD2DEG(ds.setpoint.roll)//setpoint roll [deg]
+			,RAD2DEG(ds.setpoint.yaw)//yaw pitch [deg]
+			,(motval[0] + motval[1] + motval[2] + motval[3]) *0.25//thro ttle setting 0.00 - 1.00
+			, motval[0], motval[1], motval[2], motval[3],
+			ds.hor_velocities.xv, ds.hor_velocities.yv,
+			ds.hor_velocities.dt, ds.hor_velocities.seqNum);
 
-	logbuflen += control_strategy.getLogText(logbuf + logbuflen,
-			MAX_LOGBUFSIZE - logbuflen);
-	udpClient_Send(&udpNavLog, logbuf, logbuflen);
-}
+		logbuflen += att_getLogText(&ds.att,logbuf + logbuflen,MAX_LOGBUFSIZE - logbuflen);
+		logbuflen += control_strategy.getLogText(logbuf + logbuflen,MAX_LOGBUFSIZE - logbuflen);
+		udpClient_Send(&udpNavLog, logbuf, logbuflen);
+	}
 
-int ctl_FlatTrim() {
-	return att_FlatTrim(&ds.att);
-}
+	int ctl_FlatTrim() {
+		return att_FlatTrim(&ds.att);
+	}
 
-void ctl_SetSetpoint(float pitch, float roll, float yaw, float h) {
-	if (pitch > ds.control_limits.pitch_roll_max)
+	void ctl_SetSetpoint(float pitch, float roll, float yaw, float h) {
+		if (pitch > ds.control_limits.pitch_roll_max)
 		pitch = ds.control_limits.pitch_roll_max;
-	if (pitch < -ds.control_limits.pitch_roll_max)
+		if (pitch < -ds.control_limits.pitch_roll_max)
 		pitch = -ds.control_limits.pitch_roll_max;
-	ds.setpoint.pitch = pitch;
-	if (roll > ds.control_limits.pitch_roll_max)
+		ds.setpoint.pitch = pitch;
+		if (roll > ds.control_limits.pitch_roll_max)
 		roll = ds.control_limits.pitch_roll_max;
-	if (roll < -ds.control_limits.pitch_roll_max)
+		if (roll < -ds.control_limits.pitch_roll_max)
 		roll = -ds.control_limits.pitch_roll_max;
-	ds.setpoint.roll = roll;
-	//if(yaw > control_limits.yawsp_max) yaw = control_limits.yawsp_max;
-	//if(yaw < -control_limits.yawsp_max) yaw = -control_limits.yawsp_max;
-	ds.setpoint.yaw = yaw;
-	if (h > ds.control_limits.h_max)
+		ds.setpoint.roll = roll;
+		//if(yaw > control_limits.yawsp_max) yaw = control_limits.yawsp_max;
+		//if(yaw < -control_limits.yawsp_max) yaw = -control_limits.yawsp_max;
+		ds.setpoint.yaw = yaw;
+		if (h > ds.control_limits.h_max)
 		h = ds.control_limits.h_max;
-	if (h <= 0)
+		if (h <= 0)
 		h = 0;
-	if (h > 0 && h < ds.control_limits.h_min)
+		if (h > 0 && h < ds.control_limits.h_min)
 		h = ds.control_limits.h_min;
-	ds.setpoint.h = h;
-}
+		ds.setpoint.h = h;
+	}
 
-void ctl_SetSetpointDiff(float pitch, float roll, float yaw, float h) {
-	ctl_SetSetpoint(pitch + ds.setpoint.pitch, ds.setpoint.pitch + pitch,
-			yaw + ds.setpoint.yaw, h + ds.setpoint.h);
-}
+	void ctl_SetSetpointDiff(float pitch, float roll, float yaw, float h) {
+		ctl_SetSetpoint(pitch + ds.setpoint.pitch, ds.setpoint.pitch + pitch,
+		yaw + ds.setpoint.yaw, h + ds.setpoint.h);
+	}
 
-void ctl_Close() {
-	mot_Close();
-	att_Close();
-}
+	void ctl_Close() {
+		mot_Close();
+		att_Close();
+	}
 

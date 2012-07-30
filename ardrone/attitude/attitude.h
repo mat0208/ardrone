@@ -21,6 +21,8 @@
 #ifndef _ATTITUDE_H
 #define _ATTITUDE_H
 
+#include "../navboard/navboard.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -45,16 +47,15 @@ struct att_struct {
     
     double dt; // time since last navdata sample in sec
 
-    //copy of physical navdata values
-    double ts; // navdata timestamp in sec
-    float hraw; // height above ground in [m]
-    char h_meas; // 1=height was measured in this sample, 0=height is copy of prev value
-    float ax; // acceleration x-axis in [m/s²] front facing up is positive
-    float ay; // acceleration y-axis in [m/s²] left facing up is positive
-    float az; // acceleration z-axis in [m/s²] top facing up is positive
-    float gx; // gyro value x-axis in [rad/sec] right turn, i.e. roll right is positive
-    float gy; // gyro value y-axis in [rad/sec] right turn, i.e. pirch down is positive
-    float gz; // gyro value z-axis in [rad/sec] right turn, i.e. yaw left is positive
+    struct nav_struct navdata;
+
+
+    float gx_kalman; // filtered gyro value x-axis in [rad/sec] right turn, i.e. roll right is positive
+    float gx_bias_kalman;  // estimated bias for gyro value x-axis in [rad/sec] right turn, i.e. roll right is positive
+    float gy_kalman; // filtered gyro value y-axis in [rad/sec] right turn, i.e. pirch down is positive
+    float gy_bias_kalman; // estimated bias for gyro value y-axis in [rad/sec] right turn, i.e. pirch down is positive
+
+
 };
 
 int att_Init(struct att_struct *att);
@@ -62,6 +63,12 @@ int att_GetSample(struct att_struct *att);
 int att_FlatTrim(struct att_struct *att); //recalibrate
 void att_Print(struct att_struct *att);
 void att_Close();
+
+
+/** puts interesting logging information into buffer, returning the number of bytes written, format is csv */
+unsigned int att_getLogText(struct att_struct *att,char *buf,unsigned int maxLen);
+/* put a list of headings for the log columns into buffer, returning the number of bytes written, format is csv */
+unsigned int att_getLogHeadings(char *buf, unsigned int maxLen);
 
 #ifdef __cplusplus
 }

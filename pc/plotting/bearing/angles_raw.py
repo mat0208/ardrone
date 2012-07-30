@@ -4,7 +4,10 @@ from pylab import *
 from testlib import *
 from math import *
 
-(ax,ay,az)=read_rawDroneAngs('logs/raw.csv')
+data=readCsv('logs/raw.csv')
+ax=data.ax
+ay=data.ay
+az=data.az
 
 ay=[ (x+32-2048)/512.0*10 for x in ay]
 ax=[ (x-10-2048)/512.0*10 for x in ax]

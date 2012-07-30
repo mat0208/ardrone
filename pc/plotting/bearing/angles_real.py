@@ -5,10 +5,11 @@ from testlib import *
 from math import *
 from ars import *
 
-(seq,gx,gy,gz,ax,ay,az,mx,my,mz)=read_seqDroneAngs('logs/drone_2_1.csv')
+
+d=readCsv('logs/drone_2_1.csv')
 
 
-(gxi,gyi,gzi)=(integrate(gx),integrate(gy),integrate(gz))
+(gxi,gyi,gzi)=(integrate(d.gx),integrate(d.gy),integrate(d.gz))
 
 ars_Init(Q_angle=0.001, Q_gyro=0.003, R_angle=0.69)
 
@@ -18,11 +19,11 @@ angles_a=[]
 angles_kal=[]
 bias=[]
 
-for i in range(len(ax)):
-    pitch_f_a=pitch_a(ax[i],az[i])
+for i in range(len(d.ax)):
+    pitch_f_a=pitch_a(d.ax[i],d.az[i])
     angles_a.append(rad2Deg(pitch_f_a))
     angles_g.append(gyi[i])
-    ars_predict(deg2Rad(gy[i]),0.005)
+    ars_predict(deg2Rad(d.gy[i]),0.005)
     ang_kal=ars_update(pitch_f_a)
     angles_kal.append(rad2Deg(ang_kal))
     bias.append(b())

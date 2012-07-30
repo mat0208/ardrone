@@ -53,6 +53,7 @@ int main()
 	printf("Calibration OK\r\n");
 	 
 	//main loop	
+	fprintf(stderr, "seq,gx,gy,gz,ax,ay,az,mx,my,mz\n");
 	while(1) { 
 		//get sample
 		rc = nav_GetSample(&nav);
