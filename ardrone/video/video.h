@@ -35,6 +35,7 @@ struct img_struct {
 	unsigned char *buf;
 	int w;
 	int h;
+	int bytesPerPixel;
 };
 
 struct vid_struct {
@@ -52,12 +53,15 @@ struct vid_struct {
 };
 
 
+
+
+
 int video_Init(struct vid_struct *vid);
 //create a new blank image
-struct img_struct *video_CreateImage(struct vid_struct *vid);
+struct img_struct *video_CreateImage(struct vid_struct *vid, int bytesPerPixel);
 //grabs next B&W image from stream (blocking)
-void video_GrabImage(struct vid_struct *vid, struct img_struct *img);
+void video_GrabImageGrey(struct vid_struct *vid, struct img_struct *img);
 void video_Close(struct vid_struct *vid);
-
+void uyvyToGrey(unsigned char *dst, unsigned char *src, unsigned int numberPixels);
 void write_pgm(struct img_struct *img, char *fn);
 #endif

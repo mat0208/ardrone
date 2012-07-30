@@ -181,7 +181,7 @@ void *video_thread_main(void* data)
 		if(vid->trigger) {
 			vid->img->timestamp = util_timestamp();
 			vid->img->seq = vid->seq;
-			memcpy(vid->img->buf, vid->buffers[buf.index].buf, vid->w*vid->h*2);
+			uyvyToGrey(vid->img->buf, vid->buffers[buf.index].buf, vid->w*vid->h);
 			vid->trigger=0;
 		}
 	
@@ -217,19 +217,20 @@ void video_Close(struct vid_struct *vid)
     close(vid->fd);
 }
 
-struct img_struct *video_CreateImage(struct vid_struct *vid)
+struct img_struct *video_CreateImage(struct vid_struct *vid, int bytesPerPixel)
 {
 	struct img_struct* img = (struct img_struct*)malloc(sizeof(struct img_struct));
 	img->w=vid->w;
 	img->h=vid->h;
-	img->buf = (unsigned char*)malloc(vid->h*vid->w*2);
+	img->bytesPerPixel=bytesPerPixel;
+	img->buf = (unsigned char*)malloc(vid->h*vid->w*bytesPerPixel);
 	return img;
 }
 
 pthread_mutex_t video_grab_mutex = PTHREAD_MUTEX_INITIALIZER; 
 
-/** @todo this is not very performant, as we only get every second image at max */
-void video_GrabImage(struct vid_struct *vid, struct img_struct *img) {
+
+void video_GrabImageGrey(struct vid_struct *vid, struct img_struct *img) {
 	pthread_mutex_lock(&video_grab_mutex);
 	vid->img = img;
 	vid->trigger=1;
@@ -237,28 +238,30 @@ void video_GrabImage(struct vid_struct *vid, struct img_struct *img) {
 	pthread_mutex_unlock(&video_grab_mutex);
 }
 
-void write_pgm(struct img_struct *img, char *fn)
+void uyvyToGrey(unsigned char *dst, unsigned char *src,  unsigned int numberPixels)
+{
+	while(numberPixels > 0) {
+	      src++;
+	      unsigned int y1=*(src++);
+	      src++;
+	      unsigned int y2=*(src++);
+	      *(dst++)=y1;
+	      *(dst++)=y2;
+	      numberPixels-=2;
+	}
+}
+
+void write_pgm(struct img_struct *greyImg, char *fn)
 {
   FILE *fp=fopen(fn,"w");
   if(fp==NULL) {
-    perror("Open pbm for writing");
+    perror("Open pgm for writing");
     return;
   }
-  fprintf(fp,"P2\n");
-  int pos=0;
-  fprintf(fp,"%d %d\n",img->w, img->h);
+  fprintf(fp,"P5\n");
+  fprintf(fp,"%d %d\n",greyImg->w, greyImg->h);
   fprintf(fp,"255\n");
-  for(int h=0; h<img->h; h++) {
-    for(int w=0; w<img->w/2; w++) {
-//      unsigned int u=img->buf[pos++];
-      unsigned int y1=img->buf[pos++];
-//      unsigned int v=img->buf[pos++];
-      unsigned int y2=img->buf[pos++];
-      
-      fprintf(fp, "%d %d ",y1,y2);
-    }
-    fprintf(fp,"\n");
-  }
+  fwrite(greyImg->buf, greyImg->w,greyImg->h,fp);
   fclose(fp);
 
 }

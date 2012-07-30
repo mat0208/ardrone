@@ -36,15 +36,15 @@ int main(int argc,char ** argv)
 	vid.n_buffers = 0;
 	if(video_Init(&vid) !=0) exit(-1);
 
-	struct img_struct* img_old = video_CreateImage(&vid);
-	struct img_struct* img_new = video_CreateImage(&vid);
+	struct img_struct* img_old = video_CreateImage(&vid,1);
+	struct img_struct* img_new = video_CreateImage(&vid,1);
 	
 	int dx,dy;
 	int x=0,y=0;
 
-	video_GrabImage(&vid, img_old);
+	video_GrabImageGrey(&vid, img_old);
     for (;;) {
-		video_GrabImage(&vid, img_new);
+		video_GrabImageGrey(&vid, img_new);
 
 /*
 		char fn[100];

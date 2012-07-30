@@ -26,8 +26,8 @@ void video_blocksum(struct img_struct* img1, struct img_struct* img2, int* dx_ou
 		for(int dx=-dmax;dx<=dmax;dx++) {
 			int sum=0;
 			for(int y=ymargin;y<h-ymargin && sum < min_sum;y++) {
-				int i1 = (y*w + xmargin+1)*2;
-				int i2 = ((y+dy)*w + xmargin+dx+1)*2;
+				int i1 = y*w + xmargin;
+				int i2 = (y+dy)*w + xmargin+dx;
 				
 				unsigned char *b1=&buf1[i1];
 				unsigned char *b2=&buf2[i2];
@@ -37,8 +37,8 @@ void video_blocksum(struct img_struct* img1, struct img_struct* img2, int* dx_ou
 				for(int x=xmargin;x<w-xmargin;x++) {
 					//printf("x=%d y=%d i1=%d i2=%d\n",x,y,i1,i2);
 					sum += abs(*b1 - *b2);
-					b1+=2;
-					b2+=2;
+					b1++;
+					b2++;
 				}
 			}
 			if(min_sum>sum) {
