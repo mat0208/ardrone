@@ -67,7 +67,7 @@ void pid_strategy_init() {
 	pid_Init(&pid_pitch_vel, getFloatParam("PID_PITCH_VEL_KP",0.5), getFloatParam("PID_PITCH_VEL_I",0.0), 0, getFloatParam("PID_PITCH_VEL_I_MAX",0.5));
 
 	//init pid pitch/roll 
-	pid_Init(&pid_roll,  getFloatParam("PID_ROLL_KP",0.5) , getFloatParam("PID_ROLL_I",0.0) , 0, getFloatParam("PID_PROLLL_I_MAX",0.5));
+	pid_Init(&pid_roll,  getFloatParam("PID_ROLL_KP",0.5) , getFloatParam("PID_ROLL_I",0.0) , 0, getFloatParam("PID_ROLL_I_MAX",0.5));
 	pid_Init(&pid_pitch, getFloatParam("PID_PITCH_KP",0.5), getFloatParam("PID_PITCH_I",0.0), 0, getFloatParam("PID_PITCH_I_MAX" ,0.5));
 
 	pid_Init(&pid_yaw, getFloatParam("PID_YAW_KP",0.5), getFloatParam("PID_YAW_I",0.0), 0, getFloatParam("PID_YAW_I_MAX",0.5));
@@ -185,12 +185,14 @@ void pid_strategy_calculateMotorSpeeds(struct drone_state_struct *cs, float moto
 unsigned int pid_strategy_getLogHeadings(char *buf, unsigned int maxLen) {
 	int len;
 	len = snprintf(buf, maxLen, ","
-			"xPos,"
-			"yPos,"
-			"targetXVel,"
-			"targetYVel,"
+			"xPos [m],"
+			"yPos [m],"
+			"targetXVel [m/s],"
+			"targetYVel [m/s],"
 			"targetPitch [deg],"
 			"targetRoll [deg],"
+			"targetPitchVel [deg/s],"
+			"targetRollVel [deg/s],"
 			"adj_pitch,"
 			"adj_roll,"
 			"adj_yaw,"
@@ -200,7 +202,7 @@ unsigned int pid_strategy_getLogHeadings(char *buf, unsigned int maxLen) {
 
 unsigned int pid_strategy_getLogText(char *buf, unsigned int maxLen) {
 	int len;
-	len = snprintf(buf, maxLen, ",%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", xPos, yPos, targetXVel, targetYVel, RAD2DEG(targetPitch), RAD2DEG(targetRoll), adj_pitch, adj_roll, adj_yaw, adj_h);
+	len = snprintf(buf, maxLen, ",%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", xPos, yPos, targetXVel, targetYVel, RAD2DEG(targetPitch), RAD2DEG(targetRoll), RAD2DEG(targetPitchVel),RAD2DEG(targetRollVel), adj_pitch, adj_roll, adj_yaw, adj_h);
 	return len;
 
 }
