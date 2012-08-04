@@ -22,7 +22,7 @@
 #define _ATTITUDE_H
 
 #include "../navboard/navboard.h"
-
+#include "moving_average.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -55,7 +55,8 @@ struct att_struct {
     float gy_kalman; // filtered gyro value y-axis in [rad/sec] right turn, i.e. pirch down is positive
     float gy_bias_kalman; // estimated bias for gyro value y-axis in [rad/sec] right turn, i.e. pirch down is positive
 
-
+    struct moving_average_struct gx_avg;
+    struct moving_average_struct gy_avg;
 };
 
 int att_Init(struct att_struct *att);

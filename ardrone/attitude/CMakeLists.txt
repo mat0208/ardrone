@@ -8,11 +8,9 @@ link_libraries(m)
 add_executable(attitude
 	attitude.c
 	main_attitude.c
+	moving_average.c
 	../util/util.c
 	../gpio/gpio.c
 	ars.c
 	../navboard/navboard.c
 )
-
-	
-

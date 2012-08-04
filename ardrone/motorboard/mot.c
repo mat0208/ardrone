@@ -144,8 +144,14 @@ void mot_Run(float m0, float m1, float m2, float m3)
   //convert to pwm values, clipped at mot_pwm_min and mot_pwm_max
   float pwm[4];
   for(int i=0;i<4;i++) {
-    if(mot.mot[i]<0.0) mot.mot[i]=0.0;
-    if(mot.mot[i]>1.0) mot.mot[i]=1.0;
+    if(mot.mot[i]<0.0) {
+      printf("mot value %d too low %f\n", i, mot.mot[i]);
+      mot.mot[i]=0.0;
+    }
+    if(mot.mot[i]>1.0) {
+      printf("mot value %d too high %f\n", i, mot.mot[i]);
+      mot.mot[i]=1.0;
+    }
     pwm[i]=mot_pwm_min + mot.mot[i]*(mot_pwm_max-mot_pwm_min);
 	if(pwm[i]<mot_pwm_min) pwm[i]=mot_pwm_min;
 	if(pwm[i]>mot_pwm_max) pwm[i]=mot_pwm_max;

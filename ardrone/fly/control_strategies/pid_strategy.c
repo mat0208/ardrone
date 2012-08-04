@@ -5,9 +5,6 @@
 #include "../flyparams.h"
 #include <stdio.h>
 
-struct pid_struct pid_roll_vel;
-struct pid_struct pid_pitch_vel;
-
 struct pid_struct pid_roll;
 struct pid_struct pid_pitch;
 struct pid_struct pid_yaw;
@@ -25,9 +22,6 @@ double targetYVel = 0;
 
 double targetRoll = 0;
 double targetPitch = 0;
-
-double targetRollVel = 0;
-double targetPitchVel = 0;
 
 float adj_roll;
 float adj_pitch;
@@ -62,10 +56,6 @@ struct setpoint_struct setpoint_landing = { 0, 0, 0, 0.2 };
 
 void pid_strategy_init() {
 
-	//init pid pitch/roll velocity
-	pid_Init(&pid_roll_vel,  getFloatParam("PID_ROLL_VEL_KP" ,0.5), getFloatParam("PID_ROLL_VEL_I" ,0.0), 0, getFloatParam("PID_ROLL_VEL_I_MAX" ,0.5));
-	pid_Init(&pid_pitch_vel, getFloatParam("PID_PITCH_VEL_KP",0.5), getFloatParam("PID_PITCH_VEL_I",0.0), 0, getFloatParam("PID_PITCH_VEL_I_MAX",0.5));
-
 	//init pid pitch/roll 
 	pid_Init(&pid_roll,  getFloatParam("PID_ROLL_KP",0.5) , getFloatParam("PID_ROLL_I",0.0) , 0, getFloatParam("PID_ROLL_I_MAX"  ,0.5));
 	pid_Init(&pid_pitch, getFloatParam("PID_PITCH_KP",0.5), getFloatParam("PID_PITCH_I",0.0), 0, getFloatParam("PID_PITCH_I_MAX" ,0.5));
@@ -80,7 +70,7 @@ void pid_strategy_init() {
 	pid_Init(&pid_hor_pos_x, 5.0, 0.0, 0, 1);
 	pid_Init(&pid_hor_pos_y, 5.0, 0.0, 0, 1);
 
-	pid_Init(&pid_h, 0.03, 0.01, 0, 0.1);
+	pid_Init(&pid_h, getFloatParam("PID_H_KP",0.03), getFloatParam("PID_H_I",0.01), 0, getFloatParam("PID_H_I_MAX", 0.1));
 
 	throttle = 0.00;
 
@@ -100,11 +90,8 @@ void pidStrategy_calculateMotorSpeedsFlying(struct horizontal_velocities_struct 
 	}
 
 	//flying, calc pid controller corrections
-	targetRollVel =  pid_CalcD(&pid_roll, targetRoll - att->roll, att->dt, 0); //err positive = need to roll right
-	targetPitchVel = pid_CalcD(&pid_pitch,targetPitch - att->pitch, att->dt, 0); //err positive = need to pitch down
-
-	adj_roll = pid_CalcD(&pid_roll_vel,   targetRollVel  - att->gx_kalman, att->dt, 0); //err positive = need to roll right
-	adj_pitch = pid_CalcD(&pid_pitch_vel, targetPitchVel - att->gy_kalman, att->dt, 0); //err positive = need to pitch down
+	adj_roll =  pid_CalcD(&pid_roll, targetRoll - att->roll, att->dt, 0); //err positive = need to roll right
+	adj_pitch  = pid_CalcD(&pid_pitch,targetPitch - att->pitch, att->dt, 0); //err positive = need to pitch down
 
 	adj_yaw = pid_CalcD(&pid_yaw, setpoint->yaw - att->yaw, att->dt, att->navdata.gz); //err positive = need to increase yaw to the left
 	adj_h = pid_CalcD(&pid_h, setpoint->h - att->h, att->dt, att->hv); //err positive = need to increase height
@@ -191,8 +178,6 @@ unsigned int pid_strategy_getLogHeadings(char *buf, unsigned int maxLen) {
 			"targetYVel [m/s],"
 			"targetPitch [deg],"
 			"targetRoll [deg],"
-			"targetPitchVel [deg/s],"
-			"targetRollVel [deg/s],"
 			"adj_pitch,"
 			"adj_roll,"
 			"adj_yaw,"
@@ -202,7 +187,7 @@ unsigned int pid_strategy_getLogHeadings(char *buf, unsigned int maxLen) {
 
 unsigned int pid_strategy_getLogText(char *buf, unsigned int maxLen) {
 	int len;
-	len = snprintf(buf, maxLen, ",%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", xPos, yPos, targetXVel, targetYVel, RAD2DEG(targetPitch), RAD2DEG(targetRoll), RAD2DEG(targetPitchVel),RAD2DEG(targetRollVel), adj_pitch, adj_roll, adj_yaw, adj_h);
+	len = snprintf(buf, maxLen, ",%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", xPos, yPos, targetXVel, targetYVel, RAD2DEG(targetPitch), RAD2DEG(targetRoll), adj_pitch, adj_roll, adj_yaw, adj_h);
 	return len;
 
 }

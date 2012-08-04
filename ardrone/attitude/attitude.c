@@ -123,13 +123,15 @@ int att_GetSample(struct att_struct *att) {
 	//execute kalman roll filter
 	ars_predict(&ars_roll, att->navdata.gx, att->dt);
 	att->roll = ars_update(&ars_roll, att->roll_a);
-	att->gx_kalman = att->navdata.gx - ars_roll.x_bias;
+	att->gx_kalman = moving_average_update(&att->gx_avg, att->navdata.gx) - ars_roll.x_bias;
+	//att->gx_kalman = att->navdata.gx - ars_roll.x_bias;
 	att->gx_bias_kalman = ars_roll.x_bias;
 
 	//execute kalman pitch filter
 	ars_predict(&ars_pitch, att->navdata.gy, att->dt);
 	att->pitch = ars_update(&ars_pitch, att->pitch_a);
-	att->gy_kalman = att->navdata.gy - ars_pitch.x_bias;
+	att->gy_kalman = moving_average_update(&att->gy_avg, att->navdata.gy) - ars_roll.x_bias;
+	//att->gy_kalman = att->navdata.gy - ars_pitch.x_bias;
 	att->gy_bias_kalman = ars_pitch.x_bias;
 
 	return 0;
@@ -179,6 +181,8 @@ int att_Init(struct att_struct *att) {
 		return rc;
 	last_ts = att->navdata.ts;
 	last_h = att->navdata.h;
+	moving_average_init(&att->gx_avg);
+	moving_average_init(&att->gy_avg);
 
 	printf("Init Navboard OK\n");
 
@@ -208,14 +212,18 @@ unsigned int att_getLogHeadings(char *buf, unsigned int maxLen) {
 			"att.h [m],"
 			"att.pitch [deg],"
 			"att.roll [deg],"
-			"att.yaw [deg]");
+			"att.yaw [deg],"
+			"att.magx [deg],"
+			"att.magy [deg],"
+			"att.magz [deg]"
+			);
 	return len;
 }
 
 unsigned int att_getLogText(struct att_struct *att, char *buf, unsigned int maxLen) {
 	int len;
 	len= snprintf(buf,maxLen,
-			",%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f"
+			",%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f"
 			,att->navdata.ts // navdata timestamp in sec
 			,att->navdata.ax// acceleration x-axis in [m/s^2] front facing up is positive
 			,att->navdata.ay// acceleration y-axis in [m/s^2] left facing up is positive
@@ -232,6 +240,10 @@ unsigned int att_getLogText(struct att_struct *att, char *buf, unsigned int maxL
 			,RAD2DEG(att->pitch)//actual pitch
 			,RAD2DEG(att->roll)//actual roll
 			,RAD2DEG(att->yaw)//actual yaw
+			,att->navdata.mag_x// magnet x-axis in [deg]
+			,att->navdata.mag_y// magnet y-axis in [deg]
+			,att->navdata.mag_z// magnet z-axis in [deg]
+
 
 	);
 	return len;

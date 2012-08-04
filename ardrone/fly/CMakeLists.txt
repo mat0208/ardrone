@@ -20,6 +20,7 @@ SET( FLY_SOURCES 	main_fly.c
 	../udp/udp.c
 	../attitude/attitude.c
 	../attitude/ars.c
+	../attitude/moving_average.c
 	../horizontal_velocities/horizontal_velocities.c
 	../video/video.c
 	../video/blocksum.c
