@@ -67,7 +67,7 @@ void pid_strategy_init() {
 	pid_Init(&pid_pitch_vel, getFloatParam("PID_PITCH_VEL_KP",0.5), getFloatParam("PID_PITCH_VEL_I",0.0), 0, getFloatParam("PID_PITCH_VEL_I_MAX",0.5));
 
 	//init pid pitch/roll 
-	pid_Init(&pid_roll,  getFloatParam("PID_ROLL_KP",0.5) , getFloatParam("PID_ROLL_I",0.0) , 0, getFloatParam("PID_ROLL_I_MAX",0.5));
+	pid_Init(&pid_roll,  getFloatParam("PID_ROLL_KP",0.5) , getFloatParam("PID_ROLL_I",0.0) , 0, getFloatParam("PID_ROLL_I_MAX"  ,0.5));
 	pid_Init(&pid_pitch, getFloatParam("PID_PITCH_KP",0.5), getFloatParam("PID_PITCH_I",0.0), 0, getFloatParam("PID_PITCH_I_MAX" ,0.5));
 
 	pid_Init(&pid_yaw, getFloatParam("PID_YAW_KP",0.5), getFloatParam("PID_YAW_I",0.0), 0, getFloatParam("PID_YAW_I_MAX",0.5));
@@ -103,8 +103,8 @@ void pidStrategy_calculateMotorSpeedsFlying(struct horizontal_velocities_struct 
 	targetRollVel =  pid_CalcD(&pid_roll, targetRoll - att->roll, att->dt, 0); //err positive = need to roll right
 	targetPitchVel = pid_CalcD(&pid_pitch,targetPitch - att->pitch, att->dt, 0); //err positive = need to pitch down
 
-	adj_roll = pid_CalcD(&pid_roll,   targetRollVel  - att->gx_kalman, att->dt, 0); //err positive = need to roll right
-	adj_pitch = pid_CalcD(&pid_pitch, targetPitchVel - att->gy_kalman, att->dt, 0); //err positive = need to pitch down
+	adj_roll = pid_CalcD(&pid_roll_vel,   targetRollVel  - att->gx_kalman, att->dt, 0); //err positive = need to roll right
+	adj_pitch = pid_CalcD(&pid_pitch_vel, targetPitchVel - att->gy_kalman, att->dt, 0); //err positive = need to pitch down
 
 	adj_yaw = pid_CalcD(&pid_yaw, setpoint->yaw - att->yaw, att->dt, att->navdata.gz); //err positive = need to increase yaw to the left
 	adj_h = pid_CalcD(&pid_h, setpoint->h - att->h, att->dt, att->hv); //err positive = need to increase height
