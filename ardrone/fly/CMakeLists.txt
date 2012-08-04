@@ -11,6 +11,7 @@ SET( FLY_SOURCES 	main_fly.c
 	control_strategies/pid_strategy.c
 	control_strategies/pid.c
 	controls.c
+	flyparams.c
 	../navboard/navboard.c
 	../util/util.c
 	../gpio/gpio.c

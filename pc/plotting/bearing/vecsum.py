@@ -1,7 +1,11 @@
 from scipy import *
 from numpy import *
 from pylab import *
-from testlib import *
+import os, sys
+lib_path = os.path.abspath(os.path.join('..','dronelib'))
+sys.path.append(lib_path)
+
+from dronelib import *
 from math import *
 
 d=readCsv('logs/drone_1_1.csv')
