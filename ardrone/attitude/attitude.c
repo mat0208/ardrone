@@ -123,13 +123,13 @@ int att_GetSample(struct att_struct *att) {
 	//execute kalman roll filter
 	ars_predict(&ars_roll, att->navdata.gx, att->dt);
 	att->roll = ars_update(&ars_roll, att->roll_a);
-	att->gx_kalman = ars_roll.x_angle;
+	att->gx_kalman = att->navdata.gx - ars_roll.x_bias;
 	att->gx_bias_kalman = ars_roll.x_bias;
 
 	//execute kalman pitch filter
 	ars_predict(&ars_pitch, att->navdata.gy, att->dt);
 	att->pitch = ars_update(&ars_pitch, att->pitch_a);
-	att->gy_kalman = ars_pitch.x_angle;
+	att->gy_kalman = att->navdata.gy - ars_pitch.x_bias;
 	att->gy_bias_kalman = ars_pitch.x_bias;
 
 	return 0;
