@@ -59,9 +59,6 @@ int ctl_Init(char *client_addr) {
 
 	LOAD_STRATEGY(control_strategy, pid_strategy);
 
-	printf("%p %p %p \n", control_strategy.init,
-			control_strategy.calculateMotorSpeeds, control_strategy.getLogText);
-
 	//defaults from AR.Drone app:  pitch,roll max=12deg; yawspeed max=100deg/sec; height limit=on; vertical speed max=700mm/sec; 
 	ds.control_limits.pitch_roll_max = DEG2RAD(12); //degrees     
 	//control_limits.yawsp_max=DEG2RAD(100); //degrees/sec
@@ -123,7 +120,7 @@ void *ctl_thread_main(void* data) {
 
 	while (1) {
 		//get sample
-		double stop, start = util_timestamp();
+		//double stop, start = util_timestamp();
 		while (1) {
 			rc = att_GetSample(&ds.att); //non blocking call
 			if (!rc) {
@@ -157,9 +154,9 @@ void *ctl_thread_main(void* data) {
 		navLog_Send();
 
 		//yield to other threads
-		stop = util_timestamp();
-		printf("ctl_thread_main loop iteration took: %f ms\n",
-				( stop - start)* 1000);
+		//stop = util_timestamp();
+		//printf("ctl_thread_main loop iteration took: %f ms\n",
+		//		( stop - start)* 1000);
 		pthread_yield ()
 	;}
 return NULL;
@@ -217,42 +214,42 @@ void navLog_Send() {
 		logbuflen += att_getLogText(&ds.att,logbuf + logbuflen,MAX_LOGBUFSIZE - logbuflen);
 		logbuflen += control_strategy.getLogText(logbuf + logbuflen,MAX_LOGBUFSIZE - logbuflen);
 		udpClient_Send(&udpNavLog, logbuf, logbuflen);
-	}
+}
 
-	int ctl_FlatTrim() {
-		return att_FlatTrim(&ds.att);
-	}
+int ctl_FlatTrim() {
+	return att_FlatTrim(&ds.att);
+}
 
-	void ctl_SetSetpoint(float pitch, float roll, float yaw, float h) {
-		if (pitch > ds.control_limits.pitch_roll_max)
-		pitch = ds.control_limits.pitch_roll_max;
-		if (pitch < -ds.control_limits.pitch_roll_max)
-		pitch = -ds.control_limits.pitch_roll_max;
-		ds.setpoint.pitch = pitch;
-		if (roll > ds.control_limits.pitch_roll_max)
-		roll = ds.control_limits.pitch_roll_max;
-		if (roll < -ds.control_limits.pitch_roll_max)
-		roll = -ds.control_limits.pitch_roll_max;
-		ds.setpoint.roll = roll;
-		//if(yaw > control_limits.yawsp_max) yaw = control_limits.yawsp_max;
-		//if(yaw < -control_limits.yawsp_max) yaw = -control_limits.yawsp_max;
-		ds.setpoint.yaw = yaw;
-		if (h > ds.control_limits.h_max)
-		h = ds.control_limits.h_max;
-		if (h <= 0)
-		h = 0;
-		if (h > 0 && h < ds.control_limits.h_min)
-		h = ds.control_limits.h_min;
-		ds.setpoint.h = h;
-	}
+void ctl_SetSetpoint(float pitch, float roll, float yaw, float h) {
+	if (pitch > ds.control_limits.pitch_roll_max)
+	pitch = ds.control_limits.pitch_roll_max;
+	if (pitch < -ds.control_limits.pitch_roll_max)
+	pitch = -ds.control_limits.pitch_roll_max;
+	ds.setpoint.pitch = pitch;
+	if (roll > ds.control_limits.pitch_roll_max)
+	roll = ds.control_limits.pitch_roll_max;
+	if (roll < -ds.control_limits.pitch_roll_max)
+	roll = -ds.control_limits.pitch_roll_max;
+	ds.setpoint.roll = roll;
+	//if(yaw > control_limits.yawsp_max) yaw = control_limits.yawsp_max;
+	//if(yaw < -control_limits.yawsp_max) yaw = -control_limits.yawsp_max;
+	ds.setpoint.yaw = yaw;
+	if (h > ds.control_limits.h_max)
+	h = ds.control_limits.h_max;
+	if (h <= 0)
+	h = 0;
+	if (h > 0 && h < ds.control_limits.h_min)
+	h = ds.control_limits.h_min;
+	ds.setpoint.h = h;
+}
 
-	void ctl_SetSetpointDiff(float pitch, float roll, float yaw, float h) {
-		ctl_SetSetpoint(pitch + ds.setpoint.pitch, ds.setpoint.pitch + pitch,
-		yaw + ds.setpoint.yaw, h + ds.setpoint.h);
-	}
+void ctl_SetSetpointDiff(float pitch, float roll, float yaw, float h) {
+	ctl_SetSetpoint(pitch + ds.setpoint.pitch, ds.setpoint.pitch + pitch,
+	yaw + ds.setpoint.yaw, h + ds.setpoint.h);
+}
 
-	void ctl_Close() {
-		mot_Close();
-		att_Close();
-	}
+void ctl_Close() {
+	mot_Close();
+	att_Close();
+}
 
