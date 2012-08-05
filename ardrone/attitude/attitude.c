@@ -148,8 +148,8 @@ int att_FlatTrim(struct att_struct *att) {
 		printf("Calibrate Navboard OK\n");
 
 	//init ars
-	ars_Init(&ars_roll, 0.001/*Q_angle*/, 0.003/*Q_gyro*/, 0.69/*R_angle*/);
-	ars_Init(&ars_pitch, 0.001/*Q_angle*/, 0.003/*Q_gyro*/, 0.69/*R_angle*/);
+	ars_Init(&ars_roll,  0.01/*Q_angle*/, 0.03/*Q_gyro*/, 0.07/*R_angle*/);
+	ars_Init(&ars_pitch, 0.01/*Q_angle*/, 0.03/*Q_gyro*/, 0.07/*R_angle*/);
 
 	//clear att
 	att->pitch_g = 0;
