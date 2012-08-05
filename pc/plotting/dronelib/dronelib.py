@@ -73,14 +73,7 @@ def readCsv(filename):
     return lc
 
 
-# Kalman filter example demo in Python
-
-# A Python implementation of the example given in pages 11-15 of "An
-# Introduction to the Kalman Filter" by Greg Welch and Gary Bishop,
-# University of North Carolina at Chapel Hill, Department of Computer
-# Science, TR 95-041,
-# http://www.cs.unc.edu/~welch/kalman/kalmanIntro.html
-
+# based on Kalman filter example demo in Python
 # by Andrew D. Straw
 def kalman(d):
 
@@ -93,48 +86,102 @@ def kalman(d):
     Pminus=N.zeros((3,3))       # a priori error estimate
     K=N.zeros((3,3))               # gain or blending factor
 
-    #R = 0.1**2 # estimate of measurement variance, change to see effect
-    R = N.array([[0.4,0],[0,0.5]])
 
-    # intial guesses
-    P[0][0] = 1000.0
-    P[1][1] = 1000.0
-    P[2][2] = 1000.0
+    # linear system
 
-
-    Q[0][0] = 0.02
-    Q[1][1] = 0.01
-    Q[2][2] = 0.01
-
+    # matrix of linar system (angle, angle_vel, drift )
+    dt = 1.0/200
     F = N.asmatrix(N.eye(3,3))
+    F[0,1] = dt
+  
+    # process noise
+    Q[0][0] = 0.0001
+    Q[1][1] = 0.001
+    Q[2][2] = 0.0000001
 
-    dt = 1/200
+#    Q[0][0] = 0.0001
+#    Q[1][1] = 0.001
+#    Q[2][2] = 0.0000001
 
-    F[1,2] = dt
 
+    # covariance intial guesses
+    P[0][0] = 100.0
+    P[1][1] = 100.0
+    P[2][2] = 5
+
+
+    # measurement part    
+
+    # measure matrix
+    # accelero, gyro
     H = N.array([[1,0,0],[0,1,1]])
+
+    # estimate of measurement variance, change to see effect
+    
+    R = N.array([[10,0 ],
+                 [0  ,0.22]])
+
+#    R = N.array([[70000,0 ],
+#                 [0  ,0.2]])
+
 
     kalman_angle=[]
     kalman_anglevel=[]
     kalman_drift=[]
     pitch_from_a=[]
+    plist=[]
 
     for k in range(0, len(d.att_ax)):
         # time update
         xhatminus = F*xhat
         Pminus = F * P * F.transpose() + Q
 
+        # build measurement vector
         pitch = pitch_a(d.att_ax[k], d.att_az[k])
         pitch_from_a.append(rad2Deg(pitch))
-        z = N.array([pitch, deg2Rad(d.att_gy[k])])
-        
+        z = N.array( [[pitch], [deg2Rad(d.att_gy[k])]] )
+
+        # measurement error
         y = z - H * xhatminus
+
+        # apply correction
         S = H * Pminus * H.transpose() + R
         K = Pminus * H.transpose() * S.getI()
         xhat = xhatminus + K * y
         P = (N.asmatrix(N.eye(3,3)) - K*H) * Pminus
+
+        
         kalman_angle.append(rad2Deg(xhat[0,0]))
         kalman_anglevel.append(rad2Deg(xhat[1,0]))
-        kalman_drift.append(xhat[2,0])
+        kalman_drift.append(rad2Deg(xhat[2,0]))
+        plist.append(P)
         
-    return (kalman_angle, kalman_anglevel, kalman_drift)
+    return (kalman_angle, kalman_anglevel, kalman_drift,plist)
+
+    
+def moving_average_single(source,index,halfLen):
+    maxIndex=len(source)-1
+    if index < halfLen:
+        return source[0];
+    if index > maxIndex-halfLen:
+        return source[maxIndex];
+
+    snippet=source[index-halfLen:index+halfLen]
+    return sum(snippet)/len(snippet)
+
+def moving_average_list(source,halfLen):
+    return [ moving_average_single(source,i,halfLen) for i in range(len(source))]
+
+def moving_average_lag_single(source,index,halfLen):
+    maxIndex=len(source)-1
+    if index < halfLen*2:
+        return source[0];
+    if index > maxIndex:
+        return source[maxIndex];
+
+    snippet=source[index-halfLen*2:index]
+    return sum(snippet)/len(snippet)
+
+def moving_average_lag_list(source,halfLen):
+    return [ moving_average_lag_single(source,i,halfLen) for i in range(len(source))]
+

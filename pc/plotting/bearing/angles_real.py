@@ -9,19 +9,6 @@ from dronelib import *
 from math import *
 from ars import *
 
-def mov_a(source,index,halfLen):
-
-    maxIndex=len(source)-1
-    if index < halfLen:
-        return source[0];
-    if index > maxIndex-halfLen:
-        return source[maxIndex];
-
-    snippet=source[index-halfLen:index+halfLen]
-    return sum(snippet)/len(snippet)
-
-def mov_a_list(source,halfLen):
-    return [ mov_a(source,i,halfLen) for i in range(len(source))]
 
 
 
@@ -56,7 +43,7 @@ for i in range(len(d.att_ax)):
 shift=28
 print "shift is {} s\n".format(shift/200.0)
 
-smoothed=mov_a_list(angles_a,8)
+smoothed=moving_average_list(angles_a,8)
 cor=correlate(smoothed,angles_drone, mode='full')
 
 subplot(2,1,1)

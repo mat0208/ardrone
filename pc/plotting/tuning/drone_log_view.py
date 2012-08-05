@@ -6,7 +6,9 @@ sys.path.append(lib_path)
 
 from dronelib import *
 
-d=readCsv('../../Console/20120804T201858_16753_ardrone2.csv')
+#d=readCsv('logs/20120804T214742_18593_ardrone2.csv')
+d=readCsv('logs/20120804T201858_16753_ardrone2.csv')
+          
 
 def unwrap(x):
     return x if x > -90 else x + 360
@@ -15,63 +17,51 @@ def unwrap(x):
 def veclen(ax, ay, az):
     return math.sqrt(ax**2+ay**2+az**2)
 
-(angle,anglevel,drift) = kalman(d)    
+(pitch_kn,pitch_vel_kn,drift_kn,P) = kalman(d)    
     
-subplot(2,1,1)
-plot(d.att_pitch, label="pitch")
-#plot([x*100 for x in d.adj_pitch],label="adj_pitch")
-plot(integrate(d.att_gy), label="pitch_g")
-plot([unwrap(rad2Deg(pitch_a(ax,az))) for (ax,az) in zip(d.att_ax, d.att_az)],label="pitch_a")
-plot(angle, label="angle")
-plot([veclen(ax, ay, az) for (ax, ay, az) in zip(d.att_ax, d.att_ay, d.att_az)], label="veclen")
+subplot(3,1,1)
+plot([x-5 for x in integrate(d.att_gy)], label="gyro")
+angle_from_accel_smoothed=moving_average_list([unwrap(rad2Deg(pitch_a(ax,az))) for (ax,az) in zip(d.att_ax, d.att_az)],8)
+
+plot(angle_from_accel_smoothed,label="accel, future")
+plot(d.att_pitch, label="kalman old")
+plot(pitch_kn, label="kalman new")
+
 grid()
 legend()
 
-subplot(2,1,2)
-plot(anglevel, label="anglevel")
-plot(drift, label="drift")
+subplot(3,1,2)
+#plot(d.att_gy_kalman,label="velocity, raw")
+velocity_from_gy_smothed=moving_average_list(d.att_gy_kalman,8)
+plot(velocity_from_gy_smothed,label="velocity, future")
+velocity_from_gy_smothed_lag=moving_average_lag_list(d.att_gy_kalman,8)
+plot(velocity_from_gy_smothed_lag,label="velocity, moving_average")
+plot(pitch_vel_kn, label="velocity kalman new")
+
+gyNoise=[a-b for a,b in zip(d.att_gy_kalman,velocity_from_gy_smothed)]
+#plot(gyNoise,label="Noise in gy")
+m=mean(gyNoise)
+stddev= sum([ ((x-m)/180*pi)**2 for x in gyNoise])/(len(gyNoise)-1)
+print "variance of gy noise: {}".format(stddev)
+#
+         
+
 grid()
 legend()
-#plot(differentiate(d.att_ts), label="dt")
-#plot([x*10 for x in d.att_magx], label="magx")
-#plot([x*1 for x in d.att_gx], label="gx")
-#plot(d.att_magy, label="magy")
-#plot(d.att_magz, label="magz")
 
 
+grid()
+legend()
 
-#grid()
-#legend()
+subplot(3,1,3)
+#plot(d.att_gy_bias_kalman,label="drift old")
+plot(drift_kn, label="drift new")
+#plot( [ x[0,0] for  x in P ],label="covariance w")
+#plot( [ x[1,1] for  x in P ],label="covariance vel")
+#plot( [ x[2,2] for  x in P ],label="covariance drift")
 
-#subplot(4,1,3)
-#plot(d.att_gy_kalman,label="gy_kalman")
-#plot(d.att_gy_bias_kalman,label="gy_bias_kalman")
-#plot([x*1000 for x in d.adj_pitch],label="adj_pitch")
-
-##fftData=abs(np.fft.rfft(d.att_pitch))**2
-##chunk=len(d.att_gy_kalman)
-##freqs=[200.0/chunk*i for i in range(1,(chunk)/2+1)]
-##plot(freqs, fftData[1:], label="fft")
-##which = fftData[1:].argmax() + 1
-##thefreq = (which+1)*200/chunk
-##print(thefreq)
-#ampl = fftData[which]
-#if ampl > 100*chunk*chunk:
-#    print "The freq is %f Hz (ampl %f)." % (thefreq,ampl)
-#    fftData*=1.0/max(ampl,100*chunk*chunk)	
-
-#plot([x*100 for x in d.targetPitch],label="targetPitch")
-
-##grid()
-##legend()
-##
-##subplot(4,1,4)
-##plot(d.motval_0,label="mot 0")
-##plot(d.motval_1,label="mot 1")
-##plot(d.motval_2,label="mot 2")
-##plot(d.motval_3,label="mot 3")
-##grid()
-##legend()
+grid()
+legend()
 show()
 
 
