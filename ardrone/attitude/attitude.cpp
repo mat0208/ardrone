@@ -32,6 +32,7 @@
 #include "../util/util.h"
 #include "ars.h"
 #include "attitude.h"
+//#include "DroneKalman.hpp"
 
 float lr_a;
 float lr_b;
@@ -67,8 +68,11 @@ float lr_slope(float y) {
 	return (sxy - lr_a * sy) / lr_b;
 }
 
-struct ars_Gyro1DKalman ars_roll;
-struct ars_Gyro1DKalman ars_pitch;
+//struct ars_Gyro1DKalman ars_roll[B;
+//struct ars_Gyro1DKalman ars_pitch;
+
+//DroneKalman dk_roll(0.001/*Q_angle*/, 0.0000003/*Q_gyro*/, 100/*R_angle*/);
+//DroneKalman dk_pitch((0.001/*Q_angle*/, 0.0000003/*Q_gyro*/, 100/*R_angle*/);
 
 //roll angle from acc in radians
 float roll(float a_z, float a_y) {
@@ -123,6 +127,9 @@ int att_GetSample(struct att_struct *att) {
 	//execute kalman roll filter
 	ars_predict(&ars_roll, att->navdata.gx, att->dt);
 	att->roll = ars_update(&ars_roll, att->roll_a);
+	dk_roll.update(att->roll_a, att->navdata.gx);
+	att->roll = att->roll_g;
+	att->roll = dk_roll.angle();
 	att->gx_kalman = moving_average_update(&att->gx_avg, att->navdata.gx) - ars_roll.x_bias;
 	//att->gx_kalman = att->navdata.gx - ars_roll.x_bias;
 	att->gx_bias_kalman = ars_roll.x_bias;
@@ -130,6 +137,9 @@ int att_GetSample(struct att_struct *att) {
 	//execute kalman pitch filter
 	ars_predict(&ars_pitch, att->navdata.gy, att->dt);
 	att->pitch = ars_update(&ars_pitch, att->pitch_a);
+	dk_pitch.update(att->pitch_a, att->navdata.gy);
+	att->pitch = att->pitch_g;
+	att->pitch = dk_pitch.angle();
 	att->gy_kalman = moving_average_update(&att->gy_avg, att->navdata.gy) - ars_roll.x_bias;
 	//att->gy_kalman = att->navdata.gy - ars_pitch.x_bias;
 	att->gy_bias_kalman = ars_pitch.x_bias;
@@ -148,8 +158,8 @@ int att_FlatTrim(struct att_struct *att) {
 		printf("Calibrate Navboard OK\n");
 
 	//init ars
-	ars_Init(&ars_roll,  0.01/*Q_angle*/, 0.03/*Q_gyro*/, 0.07/*R_angle*/);
-	ars_Init(&ars_pitch, 0.01/*Q_angle*/, 0.03/*Q_gyro*/, 0.07/*R_angle*/);
+	ars_Init(&ars_roll,  0.001/*Q_angle*/, 0.0000003/*Q_gyro*/, 100/*R_angle*/);
+	ars_Init(&ars_pitch, 0.001/*Q_angle*/, 0.0000003/*Q_gyro*/, 100/*R_angle*/);
 
 	//clear att
 	att->pitch_g = 0;
