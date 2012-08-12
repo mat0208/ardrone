@@ -69,9 +69,10 @@ int ctl_Init(char *client_addr) {
 	//control_limits.yawsp_max=DEG2RAD(100); //degrees/sec
 	ds.control_limits.h_max = 6.00;
 	ds.control_limits.h_min = 0.40;
-	ds.control_limits.throttle_hover = 0.46;
+	ds.control_limits.throttle_hover = 0.52;
 	ds.control_limits.throttle_min = 0.01;
 	ds.control_limits.throttle_max = 0.85;
+	ds.control_limits.adj_yaw_max = 0.1;
 
 	//Attitude Estimate
 	int rc = att_Init(&ds.att);

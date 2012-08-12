@@ -35,7 +35,6 @@ using namespace std;
 
 DroneKalman::DroneKalman(float qAngle, float qAngleVel, float qDrift, float rAccelero, float rGyro)
 {
-  try {
   /****************************
    * Linear system model      *
    ***************************/
@@ -143,12 +142,6 @@ DroneKalman::DroneKalman(float qAngle, float qAngleVel, float qDrift, float rAcc
    * Construction of the Filter *
    ******************************/
   m_filter=new ExtendedKalmanFilter(m_prior);
-  }
-  catch(std::exception const& e)
-  {
-    std::cerr<< "Constructor : "<< e.what() << std::endl;
-  }
-
 }
 
 DroneKalman::~DroneKalman()
@@ -170,10 +163,9 @@ void DroneKalman::update(float acceleroAngle, float gyroVal)
       measurement(2)=gyroVal;
       ColumnVector input(0);
       
-      m_filter->Update(m_sys_model,input,m_meas_model,measurement);
+      m_filter->Update(m_sys_model,input, m_meas_model, measurement);
       Pdf<ColumnVector> * posterior = m_filter->PostGet();
-      cout << " Posterior Mean = " << endl << posterior->ExpectedValueGet() << endl;
-
+      //cout << " Posterior Mean = " << endl << posterior->ExpectedValueGet() << endl;
 } 
 
 float DroneKalman::angle()
@@ -193,4 +185,3 @@ float DroneKalman::drift()
       Pdf<ColumnVector> * posterior = m_filter->PostGet();
       return posterior->ExpectedValueGet()(3);
 }
-

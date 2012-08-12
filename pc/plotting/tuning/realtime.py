@@ -8,7 +8,8 @@ sys.path.append(lib_path)
 from dronelib import *
 
 #d=readCsv('logs/20120804T214742_18593_ardrone2.csv')
-d=readCsv('../../Console/20120806T202231_30243_ardrone2.csv')
+#d=readCsv('../../Console/20120812T202241_8068_ardrone2.csv')
+d=readCsv('../../Console/20120813T001753_17882_ardrone2.csv')
           
 
  

@@ -20,6 +20,7 @@ struct control_limits_struct {
 	float throttle_hover; //hover throttle setting
 	float throttle_min; //min throttle (while flying)
 	float throttle_max; //max throttle (while flying)
+	float adj_yaw_max;  //max yaw influence
 };
 
 
