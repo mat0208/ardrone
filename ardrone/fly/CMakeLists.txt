@@ -16,7 +16,6 @@ SET( FLY_SOURCES 	main_fly.c
 	../util/util.c
 	../gpio/gpio.c
 	../motorboard/motorboard.c
-	../motorboard/mot.c
 	../udp/udp.c
 	../attitude/attitude.c
 	../attitude/ars.c

@@ -32,7 +32,7 @@
 
 #include "../util/type.h"
 #include "../util/util.h"
-#include "../motorboard/mot.h"
+#include "../motorboard/motorboard.h"
 #include "../udp/udp.h"
 #include "controlthread.h"
 #include "controls.h"
@@ -86,7 +86,7 @@ int ctl_Init(char *client_addr) {
 	}
 
 	//start motor thread
-	rc = mot_Init();
+	rc = motorboard_Init();
 	if (rc)
 		return rc;
 
@@ -95,7 +95,7 @@ int ctl_Init(char *client_addr) {
 	//start ctl thread 
 	rc = pthread_create(&ctl_thread, NULL, ctl_thread_main, NULL);
 	if (rc) {
-		printf("ctl_Init: Return code from pthread_create(mot_thread) is %d\n",
+		printf("ctl_Init: Return code from pthread_create(control_thread) is %d\n",
 				rc);
 		return 202;
 	}
@@ -134,7 +134,7 @@ void *ctl_thread_main(void* data) {
 		control_strategy.calculateMotorSpeeds(&ds, motor);
 
 		//send to motors
-		mot_Run(motor[0], motor[1], motor[2], motor[3]);
+		motorboard_Run(motor[0], motor[1], motor[2], motor[3]);
 
 		if ((cnt % 200) == 0) {
 			printf("SET ROLL %5.2f PITCH %5.2f YAW %5.2f   H %5.2f\n",
@@ -147,9 +147,9 @@ void *ctl_thread_main(void* data) {
 		//blink leds    
 		cnt++;
 		if ((cnt % 200) == 0)
-			mot_SetLeds(MOT_LEDGREEN, MOT_LEDGREEN, MOT_LEDGREEN, MOT_LEDGREEN);
+			motorboard_SetLeds(MOT_LEDGREEN, MOT_LEDGREEN, MOT_LEDGREEN, MOT_LEDGREEN);
 		else if ((cnt % 200) == 100)
-			mot_SetLeds(0, 0, 0, 0);
+			motorboard_SetLeds(0, 0, 0, 0);
 
 		navLog_Send();
 
@@ -193,7 +193,7 @@ void navLog_Send() {
 	int logbuflen;
 
 	float motval[4];
-	mot_GetMot(motval);
+	motorboard_GetMot(motval);
 
 	logcnt++;
 	logbuflen = snprintf(
@@ -249,7 +249,7 @@ void ctl_SetSetpointDiff(float pitch, float roll, float yaw, float h) {
 }
 
 void ctl_Close() {
-	mot_Close();
+	motorboard_Close();
 	att_Close();
 }
 

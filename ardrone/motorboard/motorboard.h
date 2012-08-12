@@ -36,8 +36,9 @@ extern "C" {
 int motorboard_Init();
 void motorboard_SetPWM(u16 pwm0, u16 pwm1, u16 pwm2, u16 pwm3);
 void motorboard_SetLeds(u08 led0, u08 led1, u08 led2, u08 led3);
+void motorboard_Run(float m0, float m1, float m2, float m3);
+void motorboard_GetMot(float *m);
 void motorboard_Close();
-
 #ifdef __cplusplus
 }
 #endif

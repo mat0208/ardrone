@@ -56,6 +56,7 @@ PWM   A
 
 int mot_fd; /* File descriptor for the port */
 
+float motvals[4];
 
 int motorboard_cmd(u08 cmd, u08 *reply, int replylen) {
 	write(mot_fd,&cmd,1);
@@ -266,6 +267,42 @@ void motorboard_SetLeds(u08 led0, u08 led1, u08 led2, u08 led3)
 	cmd[1]=((led2&3)<<7)  | ((led3&3)<<5);
 	write(mot_fd, cmd, 2);
 }  
+
+//run motors: 0.0=minimum speed, 1.0=maximum speed (clipped to these values)
+void motorboard_Run(float m0, float m1, float m2, float m3)
+{
+  const u16 mot_pwm_min=0x00; 
+  const u16 mot_pwm_max=0x1ff;
+  motvals[0]=m0;
+  motvals[1]=m1;
+  motvals[2]=m2;
+  motvals[3]=m3;
+  
+  //convert to pwm values, clipped at mot_pwm_min and mot_pwm_max
+  float pwm[4];
+  for(int i=0;i<4;i++) {
+    if(motvals[i]<0.0) {
+      printf("mot value %d too low %f\n", i, motvals[i]);
+      motvals[i]=0.0;
+    }
+    if(motvals[i]>1.0) {
+      printf("mot value %d too high %f\n", i, motvals[i]);
+      motvals[i]=1.0;
+    }
+    pwm[i]=mot_pwm_min + motvals[i]*(mot_pwm_max-mot_pwm_min);
+    if(pwm[i]<mot_pwm_min) pwm[i]=mot_pwm_min;
+    if(pwm[i]>mot_pwm_max) pwm[i]=mot_pwm_max;
+  }
+    
+  motorboard_SetPWM((u16)pwm[0],(u16)pwm[1],(u16)pwm[2],(u16)pwm[3]);
+} 
+
+void motorboard_GetMot(float *m) {	
+  int i;
+  for(i=0;i<4;++i) {
+    m[i] = motvals[i];
+  }
+}
 
 void motorboard_Close()
 {
