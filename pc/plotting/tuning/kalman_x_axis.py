@@ -6,8 +6,8 @@ sys.path.append(lib_path)
 
 from dronelib import *
 
-#d=readCsv('logs/20120804T214742_18593_ardrone2.csv')
-d=readCsv('logs/20120804T201858_16753_ardrone2.csv')
+d=readCsv('logs/kalmantuning1.csv')
+#d=readCsv('../../Console/20120806T194404_29785_ardrone2.csv')
           
 
 def unwrap(x):
@@ -32,9 +32,9 @@ legend()
 
 subplot(3,1,2)
 #plot(d.att_gy_kalman,label="velocity, raw")
-velocity_from_gy_smothed=moving_average_list(d.att_gy_kalman,8)
+velocity_from_gy_smothed=moving_average_list(d.att_gy_kalman,12)
 plot(velocity_from_gy_smothed,label="velocity, future")
-velocity_from_gy_smothed_lag=moving_average_lag_list(d.att_gy_kalman,8)
+velocity_from_gy_smothed_lag=moving_average_lag_list(d.att_gy_kalman,12)
 plot(velocity_from_gy_smothed_lag,label="velocity, moving_average")
 plot(pitch_vel_kn, label="velocity kalman new")
 

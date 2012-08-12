@@ -26,6 +26,9 @@ def differentiate(ts):
 def pitch_a(ax,az):
     return atan2(ax,-az)
 
+def roll_a(ay,az):
+    return atan2(ay,-az)
+
 def deg2Rad(d):
     return d/180*pi
 
