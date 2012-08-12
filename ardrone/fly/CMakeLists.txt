@@ -2,8 +2,14 @@ cmake_minimum_required(VERSION 2.6)
 
 include (../ardrone2_toolchain.cmake )
 
-link_libraries(m)
 link_libraries(pthread)
+link_directories(${CMAKE_BINARY_DIR}/../libs/orocos-bfl-0.8.0/src)
+link_libraries(m)
+link_libraries(orocos-bfl)
+
+include_directories(${CMAKE_BINARY_DIR}/../libs/orocos-bfl-0.8.0/src
+	${CMAKE_BINARY_DIR}/../libs/boost_1_50_0
+)
 
 
 SET( FLY_SOURCES 	main_fly.c
@@ -17,7 +23,8 @@ SET( FLY_SOURCES 	main_fly.c
 	../gpio/gpio.c
 	../motorboard/motorboard.c
 	../udp/udp.c
-	../attitude/attitude.c
+	../attitude/attitude.cpp
+	../attitude/DroneKalman.cpp
 	../attitude/ars.c
 	../attitude/moving_average.c
 	../horizontal_velocities/horizontal_velocities.c

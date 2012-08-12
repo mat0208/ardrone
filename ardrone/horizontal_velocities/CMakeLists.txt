@@ -11,7 +11,7 @@ add_executable(horizontal_velocities
 	../util/util.c
 	../video/video.c
 	../video/blocksum.c
-	../attitude/attitude.c
+	../attitude/attitude.cpp
 	../attitude/ars.c
 	../attitude/moving_average.c
 	../navboard/navboard.c

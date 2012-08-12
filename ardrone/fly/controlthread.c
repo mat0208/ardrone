@@ -29,6 +29,7 @@
 #include <stdlib.h>  //exit()
 #include <pthread.h>
 #include <math.h>
+#include <sched.h>
 
 #include "../util/type.h"
 #include "../util/util.h"
@@ -39,6 +40,7 @@
 #include "control_strategies/pid_strategy.h"
 
 pthread_t ctl_thread;
+pthread_attr_t ctl_attrs;
 
 struct drone_state_struct ds;
 
@@ -57,6 +59,9 @@ void *ctl_thread_main(void* data);
 
 int ctl_Init(char *client_addr) {
 
+	struct sched_param params;
+	params.sched_priority = 99;
+
 	LOAD_STRATEGY(control_strategy, pid_strategy);
 
 	//defaults from AR.Drone app:  pitch,roll max=12deg; yawspeed max=100deg/sec; height limit=on; vertical speed max=700mm/sec; 
@@ -64,8 +69,8 @@ int ctl_Init(char *client_addr) {
 	//control_limits.yawsp_max=DEG2RAD(100); //degrees/sec
 	ds.control_limits.h_max = 6.00;
 	ds.control_limits.h_min = 0.40;
-	ds.control_limits.throttle_hover = 0.66;
-	ds.control_limits.throttle_min = 0.50;
+	ds.control_limits.throttle_hover = 0.46;
+	ds.control_limits.throttle_min = 0.01;
 	ds.control_limits.throttle_max = 0.85;
 
 	//Attitude Estimate
@@ -73,9 +78,9 @@ int ctl_Init(char *client_addr) {
 	if (rc)
 		return rc;
 
-	rc = horizontal_velocities_init(&ds.hor_velocities);
-	if (rc)
-		return rc;
+//	rc = horizontal_velocities_init(&ds.hor_velocities);
+//	if (rc)
+//		return rc;
 
 	//udp logger
 	if (client_addr) {
@@ -92,8 +97,11 @@ int ctl_Init(char *client_addr) {
 
 	control_strategy.init();
 
-	//start ctl thread 
-	rc = pthread_create(&ctl_thread, NULL, ctl_thread_main, NULL);
+	if (pthread_attr_init(&ctl_attrs)) perror("pthread_attr_init");
+	if (pthread_attr_setinheritsched(&ctl_attrs, PTHREAD_EXPLICIT_SCHED)) perror("pthread_attr_setinheritsched");
+	if (pthread_attr_setschedpolicy(&ctl_attrs, SCHED_RR)) perror("pthread_attr_setschedpolicy");
+	if (pthread_attr_setschedparam(&ctl_attrs, &params)) perror("pthread_attr_setschedparam");
+	rc = pthread_create(&ctl_thread, &ctl_attrs, ctl_thread_main, NULL);
 	if (rc) {
 		printf("ctl_Init: Return code from pthread_create(control_thread) is %d\n",
 				rc);
@@ -105,12 +113,15 @@ int ctl_Init(char *client_addr) {
 void *ctl_thread_main(void* data) {
 	int cnt = 0;
 	int rc;
+	struct sched_param param;
+	int policy;
 	switchState(&ds, Landed);
-
+	pthread_getschedparam(pthread_self(), &policy, &param);
+	printf("thread policy: %d, prio: %d\n", policy, param.sched_priority);
 	while (1) {
 		rc = att_GetSample(&ds.att);
 		if (!rc) {
-			horizontal_velocities_getSample(&ds.hor_velocities, &ds.att);
+//			horizontal_velocities_getSample(&ds.hor_velocities, &ds.att);
 			break;
 		}
 		if (rc != 1)
@@ -124,7 +135,7 @@ void *ctl_thread_main(void* data) {
 		while (1) {
 			rc = att_GetSample(&ds.att); //non blocking call
 			if (!rc) {
-				horizontal_velocities_getSample(&ds.hor_velocities, &ds.att);
+//				horizontal_velocities_getSample(&ds.hor_velocities, &ds.att);
 				break;
 			}
 			if (rc != 1)
@@ -252,4 +263,3 @@ void ctl_Close() {
 	motorboard_Close();
 	att_Close();
 }
-
