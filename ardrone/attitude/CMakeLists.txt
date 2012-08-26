@@ -19,4 +19,5 @@ add_executable(attitude
 	../gpio/gpio.c
 	ars.c
 	../navboard/navboard.c
+	../lowpass/lowpass.c
 )

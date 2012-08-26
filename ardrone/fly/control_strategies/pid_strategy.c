@@ -34,6 +34,11 @@ float adj_pitch;
 float adj_yaw;
 float adj_h;
 
+struct lowpass_struct lp_adj_h;
+struct lowpass_struct lp_adj_roll;
+struct lowpass_struct lp_adj_pitch;
+struct lowpass_struct lp_adj_yaw;
+
 float throttle;
 
 // minimum throttle for launching ramp 
@@ -63,12 +68,12 @@ struct setpoint_struct setpoint_landing = { 0, 0, 0, 0.2 };
 void pid_strategy_init() {
 
 	//init pid pitch/roll 
-	pid_Init(&pid_roll,  getFloatParam("PID_ROLL_KP",2.0) , getFloatParam("PID_ROLL_I",0.0) , 0, getFloatParam("PID_ROLL_I_MAX",  0.5));
-	pid_Init(&pid_pitch, getFloatParam("PID_PITCH_KP",2.0), getFloatParam("PID_PITCH_I",0.0), 0, getFloatParam("PID_PITCH_I_MAX", 0.5));
-	pid_Init(&pid_yaw,   getFloatParam("PID_YAW_KP",2.0),	getFloatParam("PID_YAW_I",0.0),   0, getFloatParam("PID_YAW_I_MAX",   0.5));
+	pid_Init(&pid_roll,  getFloatParam("PID_ROLL_KP",2.0) , getFloatParam("PID_ROLL_I",0.0) , getFloatParam("PID_ROLL_D",0.0),  getFloatParam("PID_ROLL_I_MAX",  0.5));
+	pid_Init(&pid_pitch, getFloatParam("PID_PITCH_KP",2.0), getFloatParam("PID_PITCH_I",0.0), getFloatParam("PID_PITCH_D",0.0), getFloatParam("PID_PITCH_I_MAX", 0.5));
+	pid_Init(&pid_yaw,   getFloatParam("PID_YAW_KP",2.0),	getFloatParam("PID_YAW_I",0.0),   getFloatParam("PID_YAW_D",0.0),   getFloatParam("PID_YAW_I_MAX",   0.5));
 
-	pid_Init(&pid_roll_vel,  getFloatParam("PID_ROLL_VEL_KP",0.2) , getFloatParam("PID_ROLL_VEL_I",0.0) , 0, getFloatParam("PID_ROLL_VEL_I_MAX"  ,0.5));
-	pid_Init(&pid_pitch_vel, getFloatParam("PID_PITCH_VEL_KP",0.2), getFloatParam("PID_PITCH_VEL_I",0.0), 0, getFloatParam("PID_PITCH_VEL_I_MAX" ,0.5));
+	pid_Init(&pid_roll_vel,  getFloatParam("PID_ROLL_VEL_KP",0.2) , getFloatParam("PID_ROLL_VEL_I",0.0) , getFloatParam("PID_ROLL_VEL_D",0.0) , getFloatParam("PID_ROLL_VEL_I_MAX"  ,0.5));
+	pid_Init(&pid_pitch_vel, getFloatParam("PID_PITCH_VEL_KP",0.2), getFloatParam("PID_PITCH_VEL_I",0.0), getFloatParam("PID_PITCH_VEL_D",0.0), getFloatParam("PID_PITCH_VEL_I_MAX" ,0.5));
 
 	/** @todo these need an i-part */
 	pid_Init(&pid_hor_vel_x, 0.2, 0.01, 0, 0.1);
@@ -79,6 +84,12 @@ void pid_strategy_init() {
 	pid_Init(&pid_hor_pos_y, 5.0, 0.0, 0, 1);
 
 	pid_Init(&pid_h, getFloatParam("PID_H_KP",0.03), getFloatParam("PID_H_I",0.01), 0, getFloatParam("PID_H_I_MAX", 0.1));
+
+	lowpass_init(&lp_adj_h);
+	lowpass_init(&lp_adj_roll);
+	lowpass_init(&lp_adj_pitch);
+	lowpass_init(&lp_adj_yaw);
+
 
 	throttle = 0.00;
 
@@ -98,15 +109,23 @@ void pidStrategy_calculateMotorSpeedsFlying(struct horizontal_velocities_struct 
 	}
 
 	//flying, calc pid controller corrections
-	target_roll_vel =  pid_CalcD(&pid_roll, targetRoll - att->roll, att->dt, 0); //err positive = need to roll right
-	target_pitch_vel  = pid_CalcD(&pid_pitch,targetPitch - att->pitch, att->dt, 0); //err positive = need to pitch down
+	target_roll_vel  = pid_Calc(&pid_roll, targetRoll  - att->roll , att->dt); //err positive = need to roll right
+	target_pitch_vel = pid_Calc(&pid_pitch,targetPitch - att->pitch, att->dt); //err positive = need to pitch down
 
-	adj_yaw = pid_CalcD(&pid_yaw, setpoint->yaw - att->yaw, att->dt, att->navdata.gz); //err positive = need to increase yaw to the left
+	adj_yaw = pid_Calc(&pid_yaw, setpoint->yaw - att->yaw, att->dt); //err positive = need to increase yaw to the left
 
-	adj_roll =  pid_CalcD(&pid_roll_vel, target_roll_vel - att->gx_kalman, att->dt, 0); //err positive = need to roll right
-	adj_pitch  = pid_CalcD(&pid_pitch_vel, target_pitch_vel - att->gy_kalman, att->dt, 0); //err positive = need to pitch down
+	adj_roll  = pid_Calc(&pid_roll_vel , target_roll_vel  - att->filtered_gx, att->dt); //err positive = need to roll right
+	adj_pitch = pid_Calc(&pid_pitch_vel, target_pitch_vel - att->filtered_gy, att->dt); //err positive = need to pitch down
 
 	adj_h = pid_CalcD(&pid_h, setpoint->h - att->h, att->dt, att->hv); //err positive = need to increase height
+
+
+	// apply lowpass-filter
+	
+	adj_h    =lowpass_update(&lp_adj_h    , adj_h    );
+	adj_roll =lowpass_update(&lp_adj_roll , adj_roll );
+	adj_pitch=lowpass_update(&lp_adj_pitch, adj_pitch);
+	adj_yaw  =lowpass_update(&lp_adj_yaw  , adj_yaw  );
 
 	throttle = control_limits->throttle_hover + adj_h;
 	if (throttle < control_limits->throttle_min)
@@ -118,11 +137,21 @@ void pidStrategy_calculateMotorSpeedsFlying(struct horizontal_velocities_struct 
 		adj_yaw = control_limits->adj_yaw_max;
 	if (adj_yaw < -control_limits->adj_yaw_max)
 		adj_yaw = -control_limits->adj_yaw_max;
+		
+	
+	
+		
+		
 	//convert pid adjustments to motor values
 	motorOut[0] = throttle + adj_roll - adj_pitch + adj_yaw;
 	motorOut[1] = throttle - adj_roll - adj_pitch - adj_yaw;
 	motorOut[2] = throttle - adj_roll + adj_pitch + adj_yaw;
 	motorOut[3] = throttle + adj_roll + adj_pitch - adj_yaw;
+	
+	// do not allow to turn of the motors while flying
+	int i;
+	for(i=0;i<4;i++) if(motorOut[i] < 0.05) motorOut[i]=0.05;
+	
 }
 
 void pid_strategy_calculateMotorSpeeds(struct drone_state_struct *cs, float motorOut[4]) {

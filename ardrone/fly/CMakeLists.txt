@@ -30,6 +30,7 @@ SET( FLY_SOURCES 	main_fly.c
 	../horizontal_velocities/horizontal_velocities.c
 	../video/video.c
 	../video/blocksum.c
+	../lowpass/lowpass.c
 )
 
 add_executable(fly

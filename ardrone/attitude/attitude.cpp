@@ -124,24 +124,20 @@ int att_GetSample(struct att_struct *att) {
 	att->roll_a = roll(att->navdata.az, att->navdata.ay);
 	att->pitch_a = pitch(att->navdata.az, att->navdata.ax);
 
+	// remove motor noise	
+	att->filtered_gx=lowpass_update(&att->gx_filter,att->navdata.gx);
+	att->filtered_gy=lowpass_update(&att->gy_filter,att->navdata.gy);
+
 	//execute kalman roll filter
-//	ars_predict(&ars_roll, att->navdata.gx, att->dt);
-//	att->roll = ars_update(&ars_roll, att->roll_a);
-	dk_roll.update(att->roll_a, att->navdata.gx);
-	att->roll = att->roll_g;
+	dk_roll.update(att->roll_a, att->filtered_gx);
 	att->roll = dk_roll.angle();
-	att->gx_kalman = dk_roll.angleVel();//moving_average_update(&att->gx_avg, att->navdata.gx) - ars_roll.x_bias;
-	//att->gx_kalman = att->navdata.gx - ars_roll.x_bias;
+	att->roll_vel_kalman = dk_roll.angleVel();
 	att->gx_bias_kalman = dk_roll.drift();
 
 	//execute kalman pitch filter
-//	ars_predict(&ars_pitch, att->navdata.gy, att->dt);
-//	att->pitch = ars_update(&ars_pitch, att->pitch_a);
-	dk_pitch.update(att->pitch_a, att->navdata.gy);
-	att->pitch = att->pitch_g;
+	dk_pitch.update(att->pitch_a, att->filtered_gy);
 	att->pitch = dk_pitch.angle();
-	att->gy_kalman = dk_pitch.angleVel();//moving_average_update(&att->gy_avg, att->navdata.gy) - ars_roll.x_bias;
-	//att->gy_kalman = att->navdata.gy - ars_pitch.x_bias;
+	att->pitch_vel_kalman = dk_pitch.angleVel();
 	att->gy_bias_kalman = dk_pitch.drift();
 
 	return 0;
@@ -191,8 +187,8 @@ int att_Init(struct att_struct *att) {
 		return rc;
 	last_ts = att->navdata.ts;
 	last_h = att->navdata.h;
-	moving_average_init(&att->gx_avg);
-	moving_average_init(&att->gy_avg);
+	lowpass_init(&att->gx_filter);
+	lowpass_init(&att->gy_filter);
 
 	printf("Init Navboard OK\n");
 
@@ -212,16 +208,18 @@ unsigned int att_getLogHeadings(char *buf, unsigned int maxLen) {
 			"att.ay [m/s^2],"
 			"att.az [m/s^2],"
 			"att.gx [deg/s],"
-			"att.gx_kalman [deg/s],"
+			"att.filtered_gx [deg/s],"
 			"att.gx_bias_kalman [deg/s],"
 			"att.gy [deg/s],"
-			"att.gy_kalman [deg/s],"
+			"att.filtered_gy [deg/s],"
 			"att.gy_bias_kalman [deg/s],"
 			"att.gz [deg/s],"
 			"att.hv [m/sec],"
 			"att.h [m],"
 			"att.pitch [deg],"
+			"att.pitch_vel_kalman [deg/s],"
 			"att.roll [deg],"
+			"att.roll_vel_kalman [deg/s],"
 			"att.yaw [deg],"
 			"att.magx [deg],"
 			"att.magy [deg],"
@@ -233,22 +231,24 @@ unsigned int att_getLogHeadings(char *buf, unsigned int maxLen) {
 unsigned int att_getLogText(struct att_struct *att, char *buf, unsigned int maxLen) {
 	int len;
 	len= snprintf(buf,maxLen,
-			",%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f"
+			",%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f"
 			,att->navdata.ts // navdata timestamp in sec
 			,att->navdata.ax// acceleration x-axis in [m/s^2] front facing up is positive
 			,att->navdata.ay// acceleration y-axis in [m/s^2] left facing up is positive
 			,att->navdata.az// acceleration z-axis in [m/s^2] top facing up is positive
 			,RAD2DEG(att->navdata.gx)// gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive
-			,RAD2DEG(att->gx_kalman)// filtered gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive
+			,RAD2DEG(att->filtered_gx)// lowpass filtered gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive
 			,RAD2DEG(att->gx_bias_kalman)// estimated bias of gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive
 			,RAD2DEG(att->navdata.gy)// gyro value y-axis in [deg/sec] right turn, i.e. pitch down is positive
-			,RAD2DEG(att->gy_kalman)// filtered gyro value y-axis in [deg/sec] right turn, i.e. pitch down is positive
+			,RAD2DEG(att->filtered_gy)// lowpass filtered gyro value y-axis in [deg/sec] right turn, i.e. pitch down is positive
 			,RAD2DEG(att->gy_bias_kalman)// estimated bias of gyro value y-axis in [deg/sec] right turn, i.e. pitch down is positive
 			,RAD2DEG(att->navdata.gz)// gyro value z-axis in [deg/sec] right turn, i.e. yaw left is positive
 			,att->hv// vertical speed [m/sec]
 			,att->h// actual height above ground in [m]
 			,RAD2DEG(att->pitch)//actual pitch
+			,RAD2DEG(att->pitch_vel_kalman)// filtered gyro value x-axis in [deg/sec] right turn, i.e. roll right is positive
 			,RAD2DEG(att->roll)//actual roll
+			,RAD2DEG(att->roll_vel_kalman)// filtered gyro value y-axis in [deg/sec] right turn, i.e. pitch down is positive
 			,RAD2DEG(att->yaw)//actual yaw
 			,att->navdata.mag_x// magnet x-axis in [deg]
 			,att->navdata.mag_y// magnet y-axis in [deg]

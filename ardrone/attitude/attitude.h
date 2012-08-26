@@ -23,6 +23,7 @@
 
 #include "../navboard/navboard.h"
 #include "moving_average.h"
+#include "../lowpass/lowpass.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -48,15 +49,19 @@ struct att_struct {
     double dt; // time since last navdata sample in sec
 
     struct nav_struct navdata;
+    
+    struct lowpass_struct gx_filter; // filter for gyro x to remove vibrations by motors
+    struct lowpass_struct gy_filter; // filter for gyro y to remove vibrations by motors
+    
+    float filtered_gx;  // the current output of the gyro x filter
+    float filtered_gy;  // the current output of the gyro y filter
 
 
-    float gx_kalman; // filtered gyro value x-axis in [rad/sec] right turn, i.e. roll right is positive
+    float roll_vel_kalman; // filtered gyro value x-axis in [rad/sec] right turn, i.e. roll right is positive
     float gx_bias_kalman;  // estimated bias for gyro value x-axis in [rad/sec] right turn, i.e. roll right is positive
-    float gy_kalman; // filtered gyro value y-axis in [rad/sec] right turn, i.e. pirch down is positive
+    
+    float pitch_vel_kalman; // filtered gyro value y-axis in [rad/sec] right turn, i.e. pirch down is positive
     float gy_bias_kalman; // estimated bias for gyro value y-axis in [rad/sec] right turn, i.e. pirch down is positive
-
-    struct moving_average_struct gx_avg;
-    struct moving_average_struct gy_avg;
 };
 
 int att_Init(struct att_struct *att);
