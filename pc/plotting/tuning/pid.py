@@ -6,8 +6,8 @@ sys.path.append(lib_path)
 
 from dronelib import *
 
-#d=readCsv('logs/20120804T214742_18593_ardrone2.csv')
-d=readCsv('../../Console/20120806T202231_30243_ardrone2.csv')
+#d=readCsv('logs/kalman_new_2.csv')
+d=readCsv('../../Console/20120824T201357_27123_ardrone2.csv')
           
 
 def unwrap(x):
@@ -17,22 +17,51 @@ def unwrap(x):
 def veclen(ax, ay, az):
     return math.sqrt(ax**2+ay**2+az**2)
 
+def timeSeg(x):
+        return x[500:]
  
-    
-subplot(3,1,1)
-plot([x-5 for x in integrate(d.att_gy)], label="gyro")
+roll_f_a=[ rad2Deg(roll_a(ax,az)) for (ax,az) in zip(d.att_ax,d.att_az)]
+roll_f_a_s=moving_average_list(roll_f_a,12)
+
+subplot(4,1,1)
+#plot([x for x in integrate(d.att_gy)], label="gyro")
+#plot(roll_f_a_s,label='roll from acc')
 
 
-plot(d.att_pitch, label="kalman old")
-plot([x*100 for x in d.adj_pitch],label="adj_pitch")
+plot(timeSeg(d.targetRoll), label="target roll ")
+plot(timeSeg(d.att_roll), label="roll  (kalman)")
+plot([x*100 for x in timeSeg(d.adj_roll)],label="adj_roll")
+plot(timeSeg(d.targetRollVel), label="target roll vel")
+
 
 grid()
 legend()
 
-subplot(3,1,2)
-plot([x*20 for x in d.adj_pitch],label="adj_pitch")
-plot(d.att_h,label="height")
+subplot(4,1,2)
+#plot([x for x in integrate(d.att_gy)], label="gyro")
+#plot(roll_f_a_s,label='roll from acc')
+
+
+
+plot(timeSeg(d.targetRollVel), label="target roll vel")
+plot(timeSeg(d.att_roll_vel_kalman), label="roll vel (kalman)")
+plot(timeSeg(d.att_gx), label="roll vel (gyro)")
+plot(timeSeg(d.att_filtered_gx), label="roll vel (lp)")
+plot([x*100 for x in timeSeg(d.adj_roll)],label="adj_roll")
+
+grid()
+legend()
+
+subplot(4,1,3)
+#plot([x for x in d.adj_roll],label="adj_roll")
+#plot(d.att_h,label="height")
          
+fft= abs(np.fft.rfft(d.adj_roll))**2
+points=len(fft)-1
+fft=fft[1:points+1]
+freqs=arange(0,points,1.0)* ( 200.0/len(d.adj_roll))
+plot(freqs,fft, label="fft adj roll")
+
 
 grid()
 legend()
@@ -41,11 +70,11 @@ legend()
 grid()
 legend()
 
-subplot(3,1,3)
-plot(d.motval_0,label="motval 0")
-plot(d.motval_1,label="motval 0")
-plot(d.motval_2,label="motval 0")
-plot(d.motval_3,label="motval 0")
+subplot(4,1,4)
+plot(timeSeg(d.motval_0),label="motval 0 vl")
+plot(timeSeg(d.motval_1),label="motval 1 vr")
+plot(timeSeg(d.motval_2),label="motval 2 hr")
+plot(timeSeg(d.motval_3),label="motval 3 hl")
 
 grid()
 legend()

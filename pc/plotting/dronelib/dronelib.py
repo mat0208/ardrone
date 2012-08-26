@@ -99,7 +99,7 @@ def kalman(d):
   
     # process noise
     Q[0][0] = 0.0001
-    Q[1][1] = 0.001
+    Q[1][1] = 0.01
     Q[2][2] = 0.0000001
 
 #    Q[0][0] = 0.0001
@@ -122,7 +122,7 @@ def kalman(d):
     # estimate of measurement variance, change to see effect
     
     R = N.array([[10,0 ],
-                 [0  ,0.22]])
+                 [0  ,0.5]])
 
 #    R = N.array([[70000,0 ],
 #                 [0  ,0.2]])
@@ -160,6 +160,110 @@ def kalman(d):
         plist.append(P)
         
     return (kalman_angle, kalman_anglevel, kalman_drift,plist)
+
+# this is not linear
+def adj_pitch_to_pitch_accel(adjp):
+    return (adjp*7000)-250
+
+# based on Kalman filter example demo in Python
+# by Andrew D. Straw
+def kalman4(d):
+
+    Q = N.zeros((4,4))# 1e-5 # process variance
+
+    # allocate space for arrays
+    xhat = N.zeros((4,1))       # a posteri estimate of x
+    P = N.zeros((4,4))          # a posteri error estimate
+    xhatminus = N.zeros((4,1))  # a priori estimate of x
+    Pminus=N.zeros((4,4))       # a priori error estimate
+    K=N.zeros((4,4))               # gain or blending factor
+
+
+    # linear system
+
+    # matrix of linar system (angle, angle_vel, angle_acc drift )
+    dt = 1.0/200
+    F = N.asmatrix(N.eye(4,4))
+    F[0,1] = dt
+    F[1,2] = dt
+  
+    # process noise
+    Q[0][0] = 0.0001
+    Q[1][1] = 0.0001
+    Q[2][2] = 1
+    Q[3][3] = 0.0000001
+
+#    Q[0][0] = 0.0001
+#    Q[1][1] = 0.001
+#    Q[2][2] = 0.0000001
+
+
+    # covariance intial guesses
+    P[0][0] = 10.0
+    P[1][1] = 10.0
+    P[2][2] = 10.0
+    P[3][3] = 5
+
+
+    # measurement part    
+
+    # measure matrix
+    # accelero, gyro
+    H = N.array([[1,0,0,0],[0,1,0,1]])
+
+    # estimate of measurement variance, change to see effect
+    
+    R = N.array([[10,0 ],
+                 [0  ,1]])
+
+#    R = N.array([[70000,0 ],
+#                 [0  ,0.2]])
+
+
+    kalman_angle=[]
+    kalman_anglevel=[]
+    kalman_angleacc=[]
+    kalman_drift=[]
+    pitch_from_a=[]
+    plist=[]
+
+    for k in range(0, len(d.att_ax)):
+        # add pitch factor
+        
+        
+        
+        
+        # time update
+        xhatminus = F*xhat
+     #   adj_pitch=d.adj_pitch[k]
+     #   xhatminus[2]=xhatminus[2]*0.8+deg2Rad(adj_pitch_to_pitch_accel(adj_pitch))*0.2
+
+        
+        Pminus = F * P * F.transpose() + Q
+
+        
+        # build measurement vector
+        pitch = pitch_a(d.att_ax[k], d.att_az[k])
+        pitch_from_a.append(rad2Deg(pitch))
+        z = N.array( [[pitch], [deg2Rad(d.att_gy[k])]] )
+
+        # measurement error
+        y = z - H * xhatminus
+
+        # apply correction
+        S = H * Pminus * H.transpose() + R
+        K = Pminus * H.transpose() * S.getI()
+        xhat = xhatminus + K * y
+        P = (N.asmatrix(N.eye(4,4)) - K*H) * Pminus
+
+        
+        kalman_angle.append(rad2Deg(xhat[0,0]))
+        kalman_anglevel.append(rad2Deg(xhat[1,0]))
+        kalman_angleacc.append(rad2Deg(xhat[2,0]))
+        kalman_drift.append(rad2Deg(xhat[3,0]))
+        plist.append(P)
+        
+    return (kalman_angle, kalman_anglevel, kalman_angleacc, kalman_drift,plist)
 
     
 def moving_average_single(source,index,halfLen):

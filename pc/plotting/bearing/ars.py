@@ -4,10 +4,10 @@
 G_Q_angle=0
 G_Q_gyro=0
 G_R_angle=0
-G_P_00=0
+G_P_00=100
 G_P_01=0
 G_P_10=0
-G_P_11=0
+G_P_11=5
 G_x_angle=0
 G_x_bias=0
 

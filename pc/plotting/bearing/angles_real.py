@@ -15,11 +15,11 @@ from ars import *
 
 #d=readCsv('logs/20120804T201858_16753_ardrone2.csv')
 
-d=readCsv('logs/20120804T214742_18593_ardrone2.csv')
+d=readCsv('../tuning/logs/pid_schaukel4.csv')
 
 (gxi,gyi,gzi)=(integrate(d.att_gx),integrate(d.att_gy),integrate(d.att_gz))
 
-ars_Init(Q_angle=0.001, Q_gyro=0.003, R_angle=0.69)
+ars_Init(Q_angle=0.001, Q_gyro=0.000000003, R_angle=10)
 
 
 angles_g=[]
@@ -40,25 +40,25 @@ for i in range(len(d.att_ax)):
     angles_kal.append(rad2Deg(ang_kal))
     bias.append(b())
 
-shift=28
+shift=1
 print "shift is {} s\n".format(shift/200.0)
 
 smoothed=moving_average_list(angles_a,8)
 cor=correlate(smoothed,angles_drone, mode='full')
 
 subplot(2,1,1)
-plot([x-17 for x in angles_g][0:-shift],label="aus g")
+plot([x for x in angles_g][0:-shift],label="aus g")
 #plot(angles_a[shift:],label="aus a")
 plot(angles_kal[0:-shift],label="aus kal")
 plot(angles_drone[0:-shift],label="aus drohne")
-plot(mov_a_list(angles_a[shift:],8),label="a geglaettet")
+plot(moving_average_list(angles_a[shift:],8),label="a geglaettet")
 grid()
 legend()
 
 subplot(2,1,2)
-#plot(bias,label="bias")
-corlenh=len(cor)/2
-plot(range(-corlenh,len(cor)-corlenh),cor,label="corr")
+plot( [rad2deg(x) for x in bias],label="bias")
+#corlenh=len(cor)/2
+#plot(range(-corlenh,len(cor)-corlenh),cor,label="corr")
 
 grid()
 legend()
