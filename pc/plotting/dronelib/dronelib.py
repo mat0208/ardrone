@@ -20,8 +20,12 @@ def differentiate(ts):
         result.append(a)
     return result
 
-
-
+    
+def zeroOffset(alist):
+    'returns a list where the offset is 0 (subtract min)'
+    m=min(alist)
+    return [ x-m for x in alist]
+ 
 
 def pitch_a(ax,az):
     return atan2(ax,-az)
@@ -73,6 +77,7 @@ def readCsv(filename):
         rownum += 1
 
     csvFile.close
+    lc.att_ts=zeroOffset(lc.att_ts)
     return lc
 
 
