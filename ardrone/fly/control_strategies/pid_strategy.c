@@ -138,8 +138,6 @@ void pidStrategy_calculateMotorSpeedsFlying(struct horizontal_velocities_struct 
 	if (adj_yaw < -control_limits->adj_yaw_max)
 		adj_yaw = -control_limits->adj_yaw_max;
 		
-	
-	
 		
 		
 	//convert pid adjustments to motor values

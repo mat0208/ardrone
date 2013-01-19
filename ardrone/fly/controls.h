@@ -33,9 +33,11 @@ enum FlyState {
 };
 
 
+/** returns the name of a given state */
 const char *stateName(enum FlyState state);
 
 
+/** a structure containing the full state of the drone */
 struct drone_state_struct {
 	struct att_struct att;
 	struct horizontal_velocities_struct hor_velocities;
@@ -44,6 +46,7 @@ struct drone_state_struct {
 	struct control_limits_struct control_limits;
 };
 
+/** switches the drone movement state machine to a new state */
 void switchState(struct drone_state_struct *dronestate, enum FlyState newState);
 
 struct control_strategy_struct {

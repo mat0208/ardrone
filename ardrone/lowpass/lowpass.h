@@ -23,6 +23,11 @@ struct lowpass_struct {
 };
 
 void lowpass_init(struct lowpass_struct *lp);
+
+/** does one filter step
+ * @param lp the lowpass structure
+ * @param newVal the new value to enter the filter
+ * @returns the filtered value */
 float lowpass_update(struct lowpass_struct *lp, float newVal);
 
 

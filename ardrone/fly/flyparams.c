@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 
-float getFloatParam(char *name, float defaultValue)
+float getFloatParam(const char *name, float defaultValue)
 {
 	char *val=getenv(name);
 	if(!val) return defaultValue;
