@@ -6,7 +6,7 @@ This project aims towards an open source firmware for the ar drone 2.0.
 
 =============
 
-Introduction
+Introduction 
 ------------
 This project provides an open source firmware for the AR.Drone quadrocopter by Parrot. 
 
